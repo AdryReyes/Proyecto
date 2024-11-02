@@ -1,0 +1,20 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+    <a href="{% url 'producto_new' %}">Nuevo Producto</a>
+
+        {% for producto in productos  %}
+            <p>Nombre: {{ producto.producto_nombre }} <br> Modelo: {{ producto.producto_modelo }}</p>
+        {% if user.is_staff %}
+            <div>
+                <a href="{% url 'producto_edit' pk=producto.pk %}">Editar</a>
+                <a href="{% url 'producto_delete' pk=producto.pk %}">Eliminar</a>
+
+            </div>
+            <hr>
+        {% endif %}
+        {% endfor %}
+
+
+
+{% endblock %}

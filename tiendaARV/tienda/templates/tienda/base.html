@@ -1,0 +1,68 @@
+{% load static %}
+{% load i18n %}
+<html lang="{% trans "es" %}">
+<head>
+    <meta charset="UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Tienda virtual</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+</head>
+<body>
+
+    <div>
+        <h1><a href="/">{% trans "Tienda Virtual" %}</a></h1>
+
+        {% if request.user.is_authenticated %}
+            <div>¡Bienvenido, {{ request.user.username }}!</div>
+            <div>
+                {% if es_moderador and not request.user.cliente %}
+                    <div>
+                        <button type="submit"><a href="{% url 'moderarComentarios' %}">Moderar Comentarios</a></button>
+                    </div>
+                {% endif %}
+                <div>
+                    {% if request.user.cliente %}
+                        <button type="submit"><a href="{% url 'perfil' %}">Editar Perfil</a></button>
+                    {% endif %}
+                </div>
+                <div>
+                    <form id="logoutForm" action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Cerrar Sesión</button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div>
+                <div>
+                    <button type="submit">
+                        <h3><a href="{% url 'login' %}">Iniciar Sesión</a></h3>
+                    </button>
+                </div>
+                <div>
+                    <button type="submit"><h3><a href="{% url 'singin' %}">Registrarse</a></h3></button>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+
+    <div>
+        <a href="{% url 'verCarrito' %}" > Carro de compra </a>
+    </div>
+
+    <div>
+        <div>
+            <div>
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

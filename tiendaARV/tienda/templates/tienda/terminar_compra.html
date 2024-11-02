@@ -1,0 +1,34 @@
+{% extends 'tienda/base.html' %}
+
+{% load i18n %}
+
+{% block content %}
+
+    <h1>Finalizar Compra</h1>
+
+    <form method="post">
+      {% csrf_token %}
+      <label for="direccion">Selecciona tu dirección:</label>
+      <select name="direccion" id="direccion">
+        {% for direccion in direcciones %}
+          <option value="{{ direccion.id }}">{{ direccion.calle }}, {{ direccion.ciudad }}, {{ direccion.pais }}</option>
+        {% endfor %}
+      </select><br>
+
+      <label for="tarjeta_pago">Selecciona tu tarjeta de pago:</label>
+      <select name="tarjeta_pago" id="tarjeta_pago">
+        {% for tarjeta_pago in tarjetas_pago %}
+          <option value="{{ tarjeta_pago.id }}">{{ tarjeta_pago.tipo }} - {{ tarjeta_pago.titular }}</option>
+        {% endfor %}
+      </select><br>
+
+      <button type="submit">Finalizar Compra</button>
+    </form>
+
+    <div>
+        {% for message in messages %}
+            <span>{{ message }}</span>
+        {% endfor %}
+    </div>
+
+{% endblock %}

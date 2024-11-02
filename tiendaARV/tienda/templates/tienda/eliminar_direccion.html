@@ -1,0 +1,14 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+
+    <h1>Confirmar Eliminar Dirección</h1>
+
+    <p>Segúro que deseas eliminar la dirección</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Confirmar</button>
+        <a href="{% url 'perfil' %}">Cancelar</a>
+    </form>
+
+{% endblock %}

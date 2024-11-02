@@ -1,0 +1,61 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+
+        <h2>Perfil de Usuario</h2>
+
+        <h4>Datos Personales:</h4>
+        {% if cliente.user %}
+            <p>Nombre de Usuario: {{ cliente.user }}</p>
+        {% endif %}
+        {% if cliente.nombre %}
+            <p>Nombre: {{ cliente.nombre }}</p>
+        {% endif %}
+        {% if cliente.apellidos %}
+            <p>Apellidos: {{ cliente.apellidos }}</p>
+        {% endif %}
+        {% if user.email %}
+            <p>Email: {{ cliente.email }}</p>
+        {% endif %}
+        <a href="{% url 'editar_perfil' pk=cliente.pk %}">Editar Perfil</a>
+
+
+        <h2>Direcciones:</h2>
+        <ul>
+            {% for direccion in direcciones_envio %}
+                <li>
+                    Dirección de Envío: {{ direccion.calle }}, {{ direccion.ciudad }}, {{ direccion.codigo_postal }}, {{ direccion.pais }}
+                </li>
+                <li>
+                    <a href="{% url 'editarDireccion' pk=direccion.pk %}">Editar Dirección</a>
+                    <a href="{% url 'confirmarEliminarDireccion' pk=direccion.pk %}">Eliminar Dirección</a>
+                </li>
+            {% endfor %}
+            {% for direccion in direcciones_facturacion %}
+                <li>
+                    Dirección de Facturación: {{ direccion.calle }}, {{ direccion.ciudad }}, {{ direccion.codigo_postal }}, {{ direccion.pais }}
+                </li>
+                <li>
+                    <a href="{% url 'editarDireccion' pk=direccion.pk %}">Editar Dirección</a>
+                    <a href="{% url 'confirmarEliminarDireccion' pk=direccion.pk %}">Eliminar Dirección</a>
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'añadirDireccion' %}">Añadir Dirección</a>
+
+        <h2>Tarjetas de Pago:</h2>
+            <ul>
+                {% for tarjeta in tarjetas_pago %}
+                    <li>
+                        <p>ID: {{ tarjeta.nombre }}</p>
+                        <p>Tipo: {{ tarjeta.tipo }}</p>
+                        <p>Titular: {{ tarjeta.titular }}</p>
+                        <p>Caducidad (DD/MM/AAAA): {{ tarjeta.caducidad }}</p>
+                        <a href="{% url 'editarTarjetaPago' pk=tarjeta.pk %}">Editar Tarjeta de Pago</a>
+                        <a href="{% url 'eliminarTarjetaPago' pk=tarjeta.pk %}">Eliminar Tarjeta de Pago</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            <a href="{% url 'añadirTarjetaPago' %}">Añadir Tarjeta de Pago</a>
+
+{% endblock %}

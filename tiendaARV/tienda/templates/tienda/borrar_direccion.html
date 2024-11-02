@@ -1,0 +1,13 @@
+
+{% block content %}
+
+    <h1>Confirmar Eliminar Dirección</h1>
+
+    <p>¿Estás seguro de que deseas eliminar esta dirección?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Confirmar</button>
+        <a href="{% url 'perfil' %}">Cancelar</a>
+    </form>
+
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+
+    <h1>Historial de tus compras</h1>
+
+    {% for compra, items_compra in compras_con_comentarios %}
+        <div>
+            {% for item_compra, comentarios, promedio_valoracion in items_compra %}
+            <div>
+                <h3>{{ item_compra.producto.producto_nombre }}</h3>
+                <div>Marca: {{ item_compra.producto.marca }}</div>
+                <div>Fecha: {{ compra.compra_fecha }}</div>
+                <div>Unidades: {{ item_compra.unidades }}</div>
+                <div>Importe: {{ item_compra.precio }}</div>
+                <div>Dirección: {{ compra.direccion.calle }}, {{ compra.direccion.ciudad }}, {{ compra.direccion.pais }}</div>
+                <div>Tarjeta: {{ compra.metodo_pago.tipo }} - {{ compra.metodo_pago.titular }}</div>
+
+                {% if comentarios %}
+                    <a href="{% url 'editarComentario' item_compra.id %}">Editar Comentario</a>
+                    {% for comentario in comentarios %}
+                        <a href="{% url 'eliminarComentario' comentario.id %}">Eliminar Comentario</a>
+                    {% endfor %}
+                {% else %}
+                    <a href="{% url 'agregarComentario' item_compra.id %}">Añadir Comentario</a>
+                {% endif %}
+            </div>
+
+            <div class="comentarios">
+                {% if comentarios %}
+                    <h4>Comentarios:</h4>
+                    <ul>
+                        {% for comentario in comentarios %}
+                            <li>{{ comentario.comentario }}</li>
+                            {% if comentario.valoracion %}
+                                <li>Valoración: {{ comentario.valoracion }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+{% endblock %}

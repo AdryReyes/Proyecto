@@ -1,0 +1,29 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+
+    <h1>Comentarios Pendientes de Moderación</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {% for comentario in comentarios_pendientes %}
+        <div>
+            <p>{{ comentario.comentario }}</p>
+            <p>Valoración: {{ comentario.valoracion }}/5</p>
+            <span>Nombre del producto: {{ comentario.producto_compra.producto.producto_nombre }}</span>
+            <span>Marca: {{ comentario.producto_compra.producto.marca.marca_nombre }}</span>
+            <span>Nombre del cliente: {{ comentario.producto_compra.compra.usuario }}</span>
+            <span>Fecha de la compra: {{ comentario.producto_compra.compra.compra_fecha }}</span>
+            <input type="hidden" name="item_compra_ids[]" value="{{ comentario.producto_compra.id }}">
+            <label>
+                <input type="checkbox" name="aprobado_{{ comentario.producto_compra.id }}" value="True"> Aprobar comentario
+            </label>
+            <label>
+                <input type="checkbox" name="rechazado_{{ comentario.producto_compra.id }}" value="True"> Rechazar comentario
+            </label>
+        </div>
+        {% endfor %}
+        <button type="submit">Guardar</button>
+    </form>
+
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+
+    <h1>Confirmar Eliminar Tarjeta de Pago</h1>
+
+    <p>¿Estás seguro de que deseas eliminar esta tarjeta de pago?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Confirmar</button>
+        <a href="{% url 'perfil' %}">Cancelar</a>
+    </form>
+
+{% endblock %}

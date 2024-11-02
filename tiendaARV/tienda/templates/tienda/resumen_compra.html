@@ -1,0 +1,29 @@
+{% extends 'tienda/base.html' %}
+
+{% load i18n %}
+
+{% block content %}
+
+    <h3>Tu Compra</h3>
+
+    {% if ultima_compra %}
+        <div>
+            <p>Fecha:{{ ultima_compra.compra_fecha }} - Importe: {{ ultima_compra.compra_importe }} €</p>
+            <ul>
+                {% for item_compra in ultima_compra.itemcompra_set.all %}
+                    <li>
+                        <span>Nombre del Producto: {{ item_compra.producto.producto_nombre }}</span><br>
+                        <span>Marca:{{ item_compra.producto.marca }}</span><br>
+                        <span>Precio: {{ item_compra.producto_precio }} €</span><br>
+                        <span>Cantidad: {{ item_compra.producto_unidades }}</span><br>
+                    </li>
+                {% endfor %}
+            </ul>
+            <p>Dirección de envio: {{ ultima_compra.direccion }}</p>
+        </div>
+        <a href="{% url 'welcome' %}">Volver a inicio</a>
+    {% else %}
+        <p>No hay compras realizadas.</p>
+    {% endif %}
+
+{% endblock %}

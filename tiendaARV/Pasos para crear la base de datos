@@ -1,0 +1,74 @@
+En settings tener:
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'proyectoTienda',
+        'USER': os.environ.get('DATABASE_USER'),  # Asegúrate de que estas variables de entorno están configuradas correctamente
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+        'HOST': 'db',  # El nombre del servicio en docker-compose
+        'PORT': '5432',
+    }
+}
+
+En docker-compose.yml:
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: proyectoTienda
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: usuario
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - ./.env
+
+volumes:
+  postgres_data:
+
+En dockerfile:
+FROM python:3.12.7-alpine3.20
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1
+
+RUN apk update \
+    && apk add --no-cache gcc musl-dev postgresql-dev python3-dev libffi-dev \
+    && pip install --upgrade pip
+
+COPY ./requirements.txt ./
+
+RUN pip install -r requirements.txt
+
+COPY ./ ./
+
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+Comandos:
+
+docker-compose exec db psql -U usuario -d proyectoTienda  -- Para entrar en el contenedor
+/dt -- para mirar la base de datos
+
+
+
+
+docker-compose exec web python manage.py makemigrations  -- actualizar base de datos
+
+docker-compose exec web python manage.py migrate -- hacerlo
+
+
+

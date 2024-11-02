@@ -1,0 +1,63 @@
+{% extends 'tienda/base.html' %}
+
+{% load i18n %}
+
+{% block content %}
+
+    <header>
+        <div>
+            <h1>Bienvenidos </h1>
+        </div>
+    </header>
+
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            {{ form.nombre.label_tag }}
+            {{ form.nombre }}
+        </div>
+        <div>
+            <label for="{{ form.marca.id_for_label }}">Marcas:</label>
+            {{ form.marca }}
+        </div>
+        <div>
+            <button type="submit">Buscar</button>
+            <button type="reset">Reset</button>
+        </div>
+    </form>
+
+
+    <div >
+        {% for producto in productos %}
+            <div>
+                <div>{{ producto.producto_nombre }} {{ producto.producto_modelo }} {{ producto.marca }}</div>
+                <div>
+                    <div>{{ producto.producto_precio }}€</div>
+                    <div>
+                        <button type="submit"><a href="{% url 'compra' pk=producto.pk %}">Comprar</a></button>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if request.user.is_authenticated %}
+        {% if request.user.is_staff and request.user.cliente.vip %}
+            <ul>
+                <li><a href="{% url 'producto_lista' %}">Gestión de productos</a></li>
+                <li><a href="{% url 'informe_compras' %}">Tu historial de Compras</a></li>
+            </ul>
+        {% elif request.user.is_staff %}
+            <ul>
+                <li><a href="{% url 'producto_admin' %}">Gestión de productos</a></li>
+            </ul>
+        {% else %}
+            {% if request.user.cliente %}
+                <ul>
+                    <li><a href="{% url 'informe_compras' %}">Tu historial de Compras</a></li>
+                </ul>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+{% endblock %}

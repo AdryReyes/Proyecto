@@ -1,0 +1,23 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+
+    {% if object %}
+        <h1>Editar Tarjeta de Pago</h1>
+    {% else %}
+        <h1>Añadir Tarjeta de Pago</h1>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">
+            {% if object %}
+                Guardar cambios
+            {% else %}
+                Añadir Tarjeta de Pago
+            {% endif %}
+        </button>
+    </form>
+
+{% endblock %}

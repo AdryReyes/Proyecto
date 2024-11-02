@@ -1,0 +1,16 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+
+    <h1>Productos por marca</h1>
+
+    {% for marca in marcas %}
+        <h3>{{ marca }}</h3>
+        {% for producto in productos %}
+            {% if producto.marca == marca %}
+                <div>{{ producto }}</div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+
+{% endblock %}

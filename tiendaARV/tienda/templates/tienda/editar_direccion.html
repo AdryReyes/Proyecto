@@ -1,0 +1,23 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+
+    {% if object %}
+        <h1>Editar Dirección</h1>
+    {% else %}
+        <h1>Añadir Dirección</h1>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">
+            {% if object %}
+                Guardar cambios
+            {% else %}
+                Añadir Dirección
+            {% endif %}
+        </button>
+    </form>
+
+{% endblock %}
