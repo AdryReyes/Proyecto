@@ -8,6 +8,8 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from decimal import Decimal
 
+
+
 from .models import *
 from .forms import *
 from django.utils import timezone
@@ -18,15 +20,39 @@ from django.db import transaction
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView
 
+from django.http import HttpResponseForbidden, JsonResponse, HttpResponseRedirect
+
+
+
+
+from django.db.models import Count
 
 class welcome(ListView, FormView):
-    model = Producto
     template_name = 'tienda/index.html'
-    context_object_name = 'productos'
     form_class = FilterForm
+    context_object_name = 'productos'
 
     def get_queryset(self):
-        queryset = super().get_queryset().order_by('id')
+        queryset = Producto.objects.all()
+
+        # Ordenar según el parámetro de la solicitud
+        orden = self.request.GET.get('orden', 'recientes')
+        if orden == 'mas_vendidos':
+            queryset = queryset.annotate(num_ventas=Count('producto_compra')).order_by('-num_ventas')
+        elif orden == 'recientes':
+            queryset = queryset.order_by('-fecha_creacion')
+
+        # Aplicar filtros del formulario
+        if self.request.method == 'POST':
+            form = self.get_form()
+            if form.is_valid():
+                producto_nombre = form.cleaned_data['nombre']
+                marca = form.cleaned_data['marca']
+                if producto_nombre:
+                    queryset = queryset.filter(producto_nombre__icontains=producto_nombre)
+                if marca:
+                    queryset = queryset.filter(marca__in=marca)
+        
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -34,35 +60,50 @@ class welcome(ListView, FormView):
         context['form'] = self.get_form()
         context['marcas'] = Marca.objects.all()
 
-        if self.request.user.groups.filter(name='Moderadores').exists():
-            context['es_moderador'] = True
-        else:
-            context['es_moderador'] = False
+        # Añadir las secciones para mostrar productos
+        context['productos_mas_vendidos'] = Producto.objects.annotate(num_ventas=Count('producto_compra')).order_by('-num_ventas')[:5]
+        context['productos_recientes'] = Producto.objects.order_by('-fecha_creacion')[:5]
+        context['productos_recomendados'] = Producto.objects.order_by('?')[:5]
+
         return context
 
     def form_valid(self, form):
-        producto_nombre = form.cleaned_data['nombre']
-        marca = form.cleaned_data['marca']
-
-        queryset = self.get_queryset().filter(producto_nombre__icontains=producto_nombre)
-        if marca:
-            queryset = queryset.filter(marca__in=marca)
-
-        self.object_list = queryset
-        return self.render_to_response(self.get_context_data(form=form))
+        # Renderizar con el queryset filtrado
+        return self.render_to_response(self.get_context_data())
 
     def form_invalid(self, form):
+        # Renderizar con los errores del formulario
         return self.render_to_response(self.get_context_data(form=form))
 
+    
 
-class producto_lista(ListView):
-	model = Producto
-	template_name = 'tienda/index.html'
-	context_object_name = 'productos'
+class producto_lista(DetailView):
+    model = Producto
+    template_name = 'tienda/producto_detalle.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        producto = self.get_object()
 
+        # Si el usuario está autenticado, accedemos al cliente
+        cliente = None
+        if self.request.user.is_authenticated:
+            try:
+                cliente = self.request.user.cliente  # Accediendo al cliente asociado al usuario
+            except Cliente.DoesNotExist:
+                pass  # Si no es cliente, no asignamos nada
+
+        # Verifica si el producto está en la lista de deseos del cliente
+        wishlist = None
+        if cliente:
+            wishlist = Wishlist.objects.filter(cliente=cliente, producto=producto)
+        
+        context['producto'] = producto
+        context['wishlist'] = wishlist  # Pasamos el resultado de la consulta
+        context['cliente'] = cliente  # Pasamos el cliente, si existe
+        return context
+    
 @method_decorator(staff_member_required, name='dispatch')
-@method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
 class producto_admin(ListView):
 	model = Producto
 	template_name = 'tienda/admin.html'
@@ -72,20 +113,24 @@ class producto_admin(ListView):
 @method_decorator(staff_member_required, name='dispatch')
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
 class producto_edit(UpdateView):
-	model = Producto
-	form_class = ProductoForm
-	template_name = 'tienda/producto_edit.html'
+    model = Producto
+    form_class = ProductoForm
+    template_name = 'tienda/producto_edit.html'
 
-	def form_valid(self, form):
-		producto = form.save(commit=False)
-		producto.author = self.request.user
-		producto.published_date = timezone.now()
-		producto.save()
-		return redirect('producto_admin')
+    def form_valid(self, form):
+        # Procesamos la imagen cargada
+        producto = form.save(commit=False)
+        producto.author = self.request.user  # Si este campo está en tu modelo
+        producto.published_date = timezone.now()
 
-	def get_object(self, queryset=None):
-		pk = self.kwargs.get('pk')
-		return get_object_or_404(Producto, pk=pk)
+        # Guardamos el producto
+        producto.save()
+
+        # Guardamos la relación del archivo
+        form.save_m2m()
+
+        return redirect('producto_admin')
+
 
 
 @method_decorator(staff_member_required, name='dispatch')
@@ -99,10 +144,25 @@ class producto_delete(DeleteView):
 @method_decorator(staff_member_required, name='dispatch')
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
 class producto_new(CreateView):
-	model = Producto
-	template_name = 'tienda/producto_new.html'
-	form_class = ProductoForm
-	success_url = reverse_lazy('producto_admin')
+    model = Producto
+    template_name = 'tienda/producto_new.html'
+    form_class = ProductoForm
+    success_url = reverse_lazy('producto_admin')
+
+    def form_valid(self, form):
+        # Asegurarnos de que el archivo de imagen se procesa
+        producto = form.save(commit=False)
+        producto.author = self.request.user  # Si este campo está en tu modelo
+        producto.published_date = timezone.now()
+
+        # Guardamos el producto
+        producto.save()
+
+        # Guardamos la relación del archivo
+        form.save_m2m()
+
+        return redirect('producto_admin')
+
 
 
 # @method_decorator(staff_member_required, name='dispatch')
@@ -137,7 +197,7 @@ class productoCompraDetailView(DetailView):
                     'cantidad': cantidad,
                 }
             request.session['carrito'] = carrito
-            return redirect('verCarrito')
+            return redirect(request.META.get('HTTP_REFERER', 'producto_lista'))
         else:
             return render(request, self.template_name, {'producto': producto, 'form': form})
 
@@ -189,22 +249,30 @@ class cerrar_sesion(LogoutView):
 
 
 class registrarse(CreateView):
-	template_name = 'tienda/login.html'
-	form_class = SignInForm
-	success_url = reverse_lazy('welcome')
+    template_name = 'tienda/login.html'  
+    form_class = SignInForm
+    success_url = reverse_lazy('welcome')  
 
-	def get_context_data(self, **kwargs):
-		context = super().get_context_data(**kwargs)
-		context['accion'] = 'Crear Cuenta'
-		return context
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['accion'] = 'Crear Cuenta'  
+        return context
 
-	def form_valid(self, form):
-		response = super().form_valid(form)
-		user = self.object
-		cliente = Cliente(user=user, saldo=0, vip=False, email=user.email, nombre=form.cleaned_data['nombre'],apellidos=form.cleaned_data['apellidos'])
-		cliente.save()
-		login(self.request, user)
-		return response
+    def form_valid(self, form):
+        response = super().form_valid(form)  
+        user = self.object  
+
+        cliente = Cliente(
+            usuario=user, 
+            cliente_saldo=0,  
+            cliente_vip=False,  
+            email=form.cleaned_data['email'],  
+            nombre=form.cleaned_data['nombre'],  
+            apellidos=form.cleaned_data['apellidos']  
+        )
+        cliente.save()  
+        login(self.request, user)  
+        return response
 
 @method_decorator(staff_member_required, name='dispatch')
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
@@ -499,30 +567,42 @@ class terminar_compra(View):
     def post(self, request, *args, **kwargs):
         direccion_id = request.POST.get('direccion')
         tarjeta_pago_id = request.POST.get('tarjeta_pago')
-        carrito = request.session.get('carrito', {})
-        total_carrito = sum(Decimal(item['precio']) * item['cantidad'] for item in carrito.values())
+        producto_id = request.POST.get('producto_id')
+        cantidad = int(request.POST.get('cantidad', 1))  # Default: 1 si no se pasa cantidad
         cliente = Cliente.objects.get(usuario=request.user)
-        direccion = Direccion.objects.filter(id=direccion_id).first()
-        tarjeta_pago = TarjetaPago.objects.filter(id=tarjeta_pago_id).first()
 
-        if direccion and tarjeta_pago:
-            if cliente.cliente_saldo >= total_carrito:
-                cliente.cliente_saldo -= total_carrito
-                cliente.save()
+        if producto_id:
+            # Compra directa
+            producto = Producto.objects.get(id=producto_id)
+            total_precio = Decimal(producto.precio_con_descuento or producto.producto_precio) * cantidad
+            direccion = Direccion.objects.filter(id=direccion_id).first()
+            tarjeta_pago = TarjetaPago.objects.filter(id=tarjeta_pago_id).first()
 
-                compra = Compra.objects.create(usuario=cliente, direccion=direccion, metodo_pago=tarjeta_pago, compra_importe=total_carrito)
-                for producto_id, item in carrito.items():
-                    producto = Producto.objects.get(id=producto_id)
-                    producto_compra.objects.create(compra=compra, producto=producto, unidades=item['cantidad'], precio=item['precio'])
-                    producto.producto_unidades -= item['cantidad']
+            if direccion and tarjeta_pago:
+                if cliente.cliente_saldo >= total_precio:
+                    cliente.cliente_saldo -= total_precio
+                    cliente.save()
+
+                    compra = Compra.objects.create(
+                        usuario=cliente,
+                        direccion=direccion,
+                        metodo_pago=tarjeta_pago,
+                        compra_importe=total_precio
+                    )
+                    producto_compra.objects.create(
+                        compra=compra,
+                        producto=producto,
+                        unidades=cantidad,
+                        precio=total_precio
+                    )
+                    producto.producto_unidades -= cantidad
                     producto.save()
 
-                del request.session['carrito']
-                return redirect('resumenCompra')
+                    return redirect('resumenCompra')
+                else:
+                    messages.error(request, "Saldo insuficiente para completar la compra.")
             else:
-                messages.error(request, "Saldo insuficiente para completar la compra.")
-        else:
-            messages.error(request, "Por favor, selecciona una dirección y una tarjeta de pago para finalizar la compra.")
+                messages.error(request, "Por favor, selecciona una dirección y una tarjeta de pago para finalizar la compra.")
 
         return redirect('finalizarCompra')
 
@@ -578,7 +658,6 @@ class comentario_edit(UpdateView):
 
 
 
-@method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
 class comentario_delete(DeleteView):
     model = Comentario
     template_name = 'tienda/comentario_delete.html'
@@ -623,3 +702,109 @@ class comentario_mod(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 comentario.delete()
         return redirect('moderarComentarios')
 
+    
+
+class WishlistView(LoginRequiredMixin, ListView):
+    model = Wishlist
+    template_name = 'tienda/wishlist.html'
+    context_object_name = 'wishlist_items'
+
+    def get_queryset(self):
+
+        cliente = self.request.user.cliente  
+        return Wishlist.objects.filter(cliente=cliente)  
+
+class AddToWishlistView(LoginRequiredMixin, View):
+    def post(self, request, producto_id):
+        producto = get_object_or_404(Producto, id=producto_id)
+
+        # Verificar si el usuario está asociado a un cliente
+        try:
+            cliente = Cliente.objects.get(usuario=request.user)
+        except Cliente.DoesNotExist:
+            messages.error(request, "Debes ser un cliente para agregar productos a tu lista de deseos.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+
+        # Verifica si el producto ya está en la lista de deseos
+        if Wishlist.objects.filter(cliente=cliente, producto=producto).exists():
+            return HttpResponseForbidden("Este producto ya está en tu lista de deseos.")
+
+        # Añade el producto a la lista de deseos
+        Wishlist.objects.create(cliente=cliente, producto=producto)
+
+        # Mensaje de éxito
+        messages.success(request, f"El producto '{producto.producto_nombre}' ha sido añadido a tu lista de deseos.")
+        
+        # Redirige a la página anterior
+        return redirect(request.META.get('HTTP_REFERER', 'producto_lista'))
+
+
+class RemoveFromWishlistView(LoginRequiredMixin, View):
+    def post(self, request, producto_id):
+        producto = get_object_or_404(Producto, id=producto_id)
+
+        cliente = request.user.cliente
+        
+        # Elimina el producto de la wishlist del cliente
+        wishlist_item = Wishlist.objects.filter(cliente=cliente, producto=producto).first()
+        
+        if not wishlist_item:
+            return HttpResponseForbidden("Este producto no está en tu lista de deseos.")
+        
+        wishlist_item.delete()
+        
+        return redirect(request.META.get('HTTP_REFERER', 'producto_lista'))
+
+# class VerificarNotificacionesDescuento(View):
+#     def post(self, request, *args, **kwargs):
+#         producto_id = kwargs.get('pk')
+#         producto = Producto.objects.get(pk=producto_id)
+
+#         if producto.tiene_descuento():
+#             listas_deseos = Wishlist.objects.filter(producto=producto)
+#             for lista in listas_deseos:
+#                 Notificacion.objects.create(
+#                     usuario=lista.cliente.usuario,
+#                     mensaje=f"¡El producto '{producto.producto_nombre}' está en oferta por {producto.precio_con_descuento()}€!"
+#                 )
+#         return redirect('producto_admin')  # Cambia esto según la redirección deseada
+    
+
+# class ObtenerNotificaciones(View):
+#     def get(self, request, *args, **kwargs):
+#         usuario = request.user
+#         if usuario.is_authenticated:
+#             wishlist_items = Wishlist.objects.filter(usuario=usuario)
+#             notificaciones = []
+#             for item in wishlist_items:
+#                 producto = item.producto
+#                 if producto.descuento and producto.descuento < producto.precio:
+#                     mensaje = f"El producto {producto.nombre} está ahora en oferta por {producto.descuento}€ (antes {producto.precio}€)"
+#                     notificaciones.append({'mensaje': mensaje, 'fecha_creacion': producto.updated_at})
+
+#             return JsonResponse(notificaciones, safe=False)
+#         return JsonResponse({'error': 'Usuario no autenticado'}, status=401)
+    
+
+# class MarcarNotificacionesLeidas(View):
+#     def post(self, request, *args, **kwargs):
+#         if request.user.is_authenticated:
+#             Notificacion.objects.filter(usuario=request.user, leido=False).update(leido=True)
+#             return JsonResponse({'estado': 'éxito'})
+#         return JsonResponse({'error': 'Usuario no autenticado'}, status=401)
+
+# class ProductosPorCategoriaView(ListView):
+#     template_name = 'tienda/categoria.html'
+#     context_object_name = 'productos'
+    
+#     def get_queryset(self):
+#         # Obtener categoría según el slug pasado en la URL
+#         self.categoria = get_object_or_404(Categoria, nombre=self.kwargs['categoria_nombre'])
+#         return Producto.objects.filter(categoria=self.categoria)
+    
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context['categoria'] = self.categoria
+#         return context
+    
+    

@@ -70,5 +70,7 @@ docker-compose exec web python manage.py makemigrations  -- actualizar base de d
 
 docker-compose exec web python manage.py migrate -- hacerlo
 
+docker-compose exec web python manage.py runserver
+
 
 

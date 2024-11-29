@@ -1,0 +1,122 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container my-5">
+
+    {% if messages %}
+        <div class="alert alert-info">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6">
+            {% if producto.producto_imagen %}
+                <img src="{{ MEDIA_URL }}{{ producto.producto_imagen.url }}" class="img-fluid rounded" alt="{{ producto.producto_nombre }}">
+            {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light" style="height: 300px;">
+                    <p class="text-muted">Sin imagen disponible</p>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            <h1>{{ producto.producto_nombre }}</h1>
+            <p class="text-muted">{{ producto.marca }}</p>
+            {% if producto.descuento %}
+                <p class="text-danger mb-0">
+                    <small><del>{{ producto.producto_precio }}€</del></small> 
+                    <span class="fw-bold">{{ producto.precio_con_descuento }}€</span>
+                </p>
+            {% else %}
+                <p class="text-success fw-bold">{{ producto.producto_precio }}€</p>
+            {% endif %}
+            <p class="mt-3">{{ producto.producto_descripcion }}</p>
+
+            <form method="POST" action="{% url 'finalizarCompra' %}">
+                {% csrf_token %}
+                <input type="hidden" name="producto_id" value="{{ producto.id }}">
+                <input type="hidden" name="cantidad" value="1">
+                <button type="submit" class="btn btn-primary mt-3">Compra Directa</button>
+            </form>
+
+            <div class="d-flex align-items-center mt-3">
+                {% if wishlist.exists %}
+                    <form method="POST" action="{% url 'remove_from_wishlist' producto.pk %}" class="me-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <img 
+                                class="wishlist-icon" 
+                                src="{% static 'tienda/images/heart_filled.png' %}" 
+                                data-producto-id="{{ producto.id }}" 
+                                alt="Eliminar de la lista de deseos" 
+                                style="width: 20px;">
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="POST" action="{% url 'add_to_wishlist' producto.pk %}" class="me-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <img 
+                                class="wishlist-icon" 
+                                src="{% static 'tienda/images/heart_empty.png' %}" 
+                                data-producto-id="{{ producto.id }}" 
+                                alt="Añadir a la lista de deseos" 
+                                style="width: 20px;">
+                        </button>
+                    </form>
+                {% endif %}
+
+                <form method="POST" action="{% url 'compra' pk=producto.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="producto_id" value="{{ producto.id }}">
+                    <input type="hidden" name="cantidad" value="1">
+                    <button type="submit" class="btn btn-success">Añadir al Carrito</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de comentarios -->
+    <div class="mt-5">
+        <h3>Comentarios</h3>
+        <hr>
+        {% for comentario in comentarios %}
+            <div class="mb-3">
+                <strong>{{ comentario.usuario }}</strong> <small class="text-muted">{{ comentario.fecha_publicacion }}</small>
+                <p>{{ comentario.texto }}</p>
+
+                <!-- Opciones para clientes y moderadores -->
+                <div>
+                    {% if user.is_authenticated %}
+                        {% if user == comentario.usuario %}
+                            <a href="{% url 'editarComentario' comentario.id %}" class="btn btn-sm btn-primary">Editar</a>
+                            <a href="{% url 'eliminarComentario' comentario.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                        {% endif %}
+                        {% if user.is_staff %}
+                            <a href="{% url 'responderComentario' comentario.id %}" class="btn btn-sm btn-secondary">Responder</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p>No hay comentarios aún. ¡Sé el primero en comentar!</p>
+        {% endfor %}
+
+        <!-- Formulario para añadir comentarios -->
+        {% if user.is_authenticated and cliente_ha_comprado %}
+            <form method="POST" action="{% url 'agregarComentario' producto.pk %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <textarea name="texto" class="form-control" rows="3" placeholder="Escribe tu comentario aquí"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary mt-2">Añadir Comentario</button>
+            </form>
+        {% else %}
+            <p class="text-muted">Debes haber comprado este producto para poder comentar.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

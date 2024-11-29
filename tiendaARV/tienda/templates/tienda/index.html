@@ -1,63 +1,107 @@
 {% extends 'tienda/base.html' %}
-
-{% load i18n %}
+{% load static %}
 
 {% block content %}
-
-    <header>
-        <div>
-            <h1>Bienvenidos </h1>
-        </div>
+<div class="container my-5">
+    <header class="text-center my-4">
+        <h1>Bienvenidos</h1>
     </header>
 
-    <form method="post">
-        {% csrf_token %}
-        <div>
-            {{ form.nombre.label_tag }}
-            {{ form.nombre }}
-        </div>
-        <div>
-            <label for="{{ form.marca.id_for_label }}">Marcas:</label>
-            {{ form.marca }}
-        </div>
-        <div>
-            <button type="submit">Buscar</button>
-            <button type="reset">Reset</button>
-        </div>
-    </form>
-
-
-    <div >
-        {% for producto in productos %}
-            <div>
-                <div>{{ producto.producto_nombre }} {{ producto.producto_modelo }} {{ producto.marca }}</div>
-                <div>
-                    <div>{{ producto.producto_precio }}€</div>
-                    <div>
-                        <button type="submit"><a href="{% url 'compra' pk=producto.pk %}">Comprar</a></button>
-                    </div>
+    <!-- Más vendidos -->
+    <div class="mb-5">
+        <h2>Más vendidos</h2>
+        <div class="d-flex overflow-auto gap-3">
+            {% for producto in productos_mas_vendidos %}
+            <div class="card shadow-sm border-0" 
+                onclick="window.location.href='{% url 'producto_lista' producto.pk %}'" 
+                style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
+                {% if producto.producto_imagen %}
+                <img src="{{ producto.producto_imagen.url }}" class="card-img-top img-fluid" alt="{{ producto.producto_nombre }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                    <p class="text-muted">Sin imagen disponible</p>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ producto.producto_nombre }} {{ producto.producto_modelo }}</h5>
+                    <p class="card-text text-secondary">{{ producto.marca }}</p>
+                    {% if producto.descuento %}
+                    <p class="text-danger mb-0">
+                        <small><del>{{ producto.producto_precio }}€</del></small> 
+                        <span class="fw-bold">{{ producto.precio_con_descuento }}€</span>
+                    </p>
+                    {% else %}
+                    <p class="text-success fw-bold">{{ producto.producto_precio }}€</p>
+                    {% endif %}
                 </div>
             </div>
-        {% endfor %}
+
+            {% endfor %}
+        </div>
     </div>
 
-    {% if request.user.is_authenticated %}
-        {% if request.user.is_staff and request.user.cliente.vip %}
-            <ul>
-                <li><a href="{% url 'producto_lista' %}">Gestión de productos</a></li>
-                <li><a href="{% url 'informe_compras' %}">Tu historial de Compras</a></li>
-            </ul>
-        {% elif request.user.is_staff %}
-            <ul>
-                <li><a href="{% url 'producto_admin' %}">Gestión de productos</a></li>
-            </ul>
-        {% else %}
-            {% if request.user.cliente %}
-                <ul>
-                    <li><a href="{% url 'informe_compras' %}">Tu historial de Compras</a></li>
-                </ul>
-            {% endif %}
-        {% endif %}
-    {% endif %}
+    <!-- Productos recientes -->
+    <div class="mb-5">
+        <h2>Productos recientes</h2>
+        <div class="d-flex overflow-auto gap-3">
+            {% for producto in productos_recientes %}
+            <div class="card shadow-sm border-0" 
+                onclick="window.location.href='{% url 'producto_lista' producto.pk %}'" 
+                style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
+                {% if producto.producto_imagen %}
+                <img src="{{ producto.producto_imagen.url }}" class="card-img-top img-fluid" alt="{{ producto.producto_nombre }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                    <p class="text-muted">Sin imagen disponible</p>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ producto.producto_nombre }} {{ producto.producto_modelo }}</h5>
+                    <p class="card-text text-secondary">{{ producto.marca }}</p>
+                    {% if producto.descuento %}
+                    <p class="text-danger mb-0">
+                        <small><del>{{ producto.producto_precio }}€</del></small> 
+                        <span class="fw-bold">{{ producto.precio_con_descuento }}€</span>
+                    </p>
+                    {% else %}
+                    <p class="text-success fw-bold">{{ producto.producto_precio }}€</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 
+    <!-- Recomendaciones -->
+    <div class="mb-5">
+        <h2>Recomendaciones</h2>
+        <div class="d-flex overflow-auto gap-3">
+            {% for producto in productos_recomendados %}
+            <div class="card shadow-sm border-0" 
+                onclick="window.location.href='{% url 'producto_lista' producto.pk %}'" 
+                style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
+                {% if producto.producto_imagen %}
+                <img src="{{ producto.producto_imagen.url }}" class="card-img-top img-fluid" alt="{{ producto.producto_nombre }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                    <p class="text-muted">Sin imagen disponible</p>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ producto.producto_nombre }} {{ producto.producto_modelo }}</h5>
+                    <p class="card-text text-secondary">{{ producto.marca }}</p>
+                    {% if producto.descuento %}
+                    <p class="text-danger mb-0">
+                        <small><del>{{ producto.producto_precio }}€</del></small> 
+                        <span class="fw-bold">{{ producto.precio_con_descuento }}€</span>
+                    </p>
+                    {% else %}
+                    <p class="text-success fw-bold">{{ producto.producto_precio }}€</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 {% endblock %}

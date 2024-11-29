@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 from .views import *
+from django.conf.urls.static import static
+from django.conf import settings
 
 
 urlpatterns = [
@@ -35,5 +37,16 @@ urlpatterns = [
     path('eliminar-carrito/', carrito_delete.as_view(), name='eliminarProductoCarrito'),
     path('finalizarcompra/', terminar_compra.as_view(), name='finalizarCompra'),
     path('resumencompra/', checkout.as_view(), name='resumenCompra'),
+    path('wishlist/', WishlistView.as_view(), name='wishlist'),
+    path('wishlist/add/<int:producto_id>/', AddToWishlistView.as_view(), name='add_to_wishlist'),
+    path('wishlist/remove/<int:producto_id>/', RemoveFromWishlistView.as_view(), name='remove_from_wishlist'),
+    # path('categoria/<str:categoria_nombre>/', ProductosPorCategoriaView.as_view(), name='productos_por_categoria'),
+    # path('notificaciones/verificar/<int:pk>/', VerificarNotificacionesDescuento.as_view(), name='verificar_descuento'),
+    # path('notificaciones/obtener/', ObtenerNotificaciones.as_view(), name='obtener_notificaciones'),
+    # path('notificaciones/marcar-leidas/', MarcarNotificacionesLeidas.as_view(), name='marcar_notificaciones'),
+
 
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

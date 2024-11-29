@@ -4,7 +4,7 @@
     <a href="{% url 'producto_new' %}">Nuevo Producto</a>
 
         {% for producto in productos  %}
-            <p>Nombre: {{ producto.producto_nombre }} <br> Modelo: {{ producto.producto_modelo }}</p>
+            <p>Nombre: {{ producto.producto_nombre }}</p>
         {% if user.is_staff %}
             <div>
                 <a href="{% url 'producto_edit' pk=producto.pk %}">Editar</a>
@@ -14,7 +14,5 @@
             <hr>
         {% endif %}
         {% endfor %}
-
-
 
 {% endblock %}

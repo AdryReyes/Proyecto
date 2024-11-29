@@ -24,35 +24,39 @@ class Cliente(models.Model):
     cliente_saldo = models.IntegerField()
     nombre = models.CharField(max_length=50, blank=True, null=True)
     apellidos = models.CharField(max_length=50, blank=True, null=True)
-    contraseña = models.CharField(max_length=50, blank=True)
-    email = models.EmailField(max_length=50, blank=True, null=True)
+    email = models.EmailField(max_length=50, blank=False, null=False)  # Obligatorio
 
     def __str__(self):
         return f'{self.usuario.username}'
 
-    def save(self, *args, **kwargs):
-        if self.contraseña and self.contraseña != self.user.password:
-            self.user.password = make_password(self.contraseña)
-            self.user.save()
-        super().save(*args, **kwargs)
+    def has_email(self):
+        return bool(self.email)
 
     class Meta:
         verbose_name_plural = "Clientes"
+
 
 class Producto(models.Model):
     producto_nombre = models.CharField(max_length=30)
     producto_modelo = models.CharField(max_length=30)
     producto_unidades = models.PositiveIntegerField()
     producto_precio = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(limit_value=0)])
+    producto_descripcion = models.TextField()
     producto_vip = models.BooleanField(default=False)
     marca = models.ForeignKey(Marca, on_delete=models.PROTECT)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    descuento = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    producto_imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
 
     def __str__(self):
         return f'{self.marca} {self.producto_modelo}'
 
-    class Meta:
-        verbose_name_plural = "Productos"
-        unique_together = ['producto_modelo', 'marca']
+    @property
+    def precio_con_descuento(self):
+        if self.descuento:
+            return self.producto_precio * (1 - self.descuento / 100)
+        return self.producto_precio
+
 
 class Direccion(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
@@ -150,16 +154,11 @@ class Wishlist(models.Model):
         verbose_name_plural = "Wishlist"
         unique_together = ('cliente', 'producto')
 
-class Notificacion(models.Model):
-    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE)
-    producto = models.ForeignKey('Producto', on_delete=models.SET_NULL, null=True, blank=True)
-    tipo = models.CharField(max_length=50)
-    mensaje = models.TextField()
-    fecha_envio = models.DateTimeField(default=timezone.now)
-    leido = models.BooleanField(default=False)
+# class Notificacion(models.Model):
+#     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notificaciones")
+#     mensaje = models.TextField()
+#     fecha_creacion = models.DateTimeField(auto_now_add=True)
+#     leido = models.BooleanField(default=False)
 
-    def __str__(self):
-        return f'Notificación para {self.cliente} - {self.tipo}'
-
-    class Meta:
-        verbose_name_plural = "Notificaciones"
+#     def __str__(self):
+#         return f"Notificación para {self.usuario.username}"

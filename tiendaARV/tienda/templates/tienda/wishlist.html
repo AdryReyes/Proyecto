@@ -1,0 +1,20 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+<h1>Mi Lista de Deseos</h1>
+<ul>
+    {% for item in wishlist_items %}
+        <li>
+            {{ item.producto.producto_nombre }} - {{ item.producto.producto_precio }}€
+            - Añadido el: {{ item.agregado_fecha|date:"d/m/Y H:i" }}
+            <form action="{% url 'remove_from_wishlist' item.producto.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Eliminar</button>
+            </form>
+        </li>
+    {% empty %}
+        <li>No tienes productos en tu lista de deseos.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'welcome' %}">Volver al catálogo</a>
+{% endblock %}

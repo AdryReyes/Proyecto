@@ -7,13 +7,15 @@
     <title>Tienda virtual</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
-    <link href='https://fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD"></script>
+    <script src="{% static 'tienda/js/notificaciones.js' %}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
 </head>
 <body>
 
     <div>
-        <h1><a href="/">{% trans "Tienda Virtual" %}</a></h1>
+        <h1><a href="/">Tienda ARV</a></h1>
 
         {% if request.user.is_authenticated %}
             <div>¡Bienvenido, {{ request.user.username }}!</div>
@@ -50,9 +52,30 @@
 
     </div>
 
+    {% if request.user.is_authenticated and request.user.cliente %}
     <div>
-        <a href="{% url 'verCarrito' %}" > Carro de compra </a>
+        <a href="{% url 'verCarrito' %}">Carro de compra</a>
     </div>
+    {% endif %}
+
+    {% if request.user.is_authenticated %}
+    {% if request.user.is_staff %}
+        <ul>
+            <li><a href="{% url 'producto_admin' %}">Gestión de productos</a></li>
+            {% if request.user.cliente and request.user.cliente.vip %}
+                <li><a href="{% url 'informe_compras' %}">Tu historial de compras</a></li>
+            {% endif %}
+        </ul>
+    {% else %}
+        {% if request.user.cliente %}
+            <ul>
+                <li><a href="{% url 'informe_compras' %}">Tu historial de compras</a></li>
+                <li><a href="{% url 'wishlist' %}">Ver lista de deseos</a></li>
+            </ul>
+        {% endif %}
+    {% endif %}
+{% endif %}
+
 
     <div>
         <div>

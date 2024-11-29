@@ -24,8 +24,9 @@ class LoginForm(AuthenticationForm):
     next = forms.CharField(widget=forms.HiddenInput, initial="/")
 
 class SignInForm(UserCreationForm):
-    nombre = forms.CharField(max_length=50)
-    apellidos = forms.CharField(max_length=50)
+    nombre = forms.CharField(max_length=50, required=True)  # Hacer que el nombre sea obligatorio
+    apellidos = forms.CharField(max_length=50, required=True)  # Hacer que los apellidos sean obligatorios
+    email = forms.EmailField(required=True)  # Correo obligatorio
 
     def clean_nombre(self):
         nombre = self.cleaned_data['nombre']
