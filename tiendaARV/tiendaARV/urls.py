@@ -23,8 +23,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(url='/tienda', permanent=True)),  # Redirección a tienda
-    path('i18n/', include('django.conf.urls.i18n')),  # Para manejo de idiomas
-    path('', TemplateView.as_view(template_name='main/index.html'), name='welcome'),  # Página de inicio
-    path('tienda/', include('tienda.urls')),  # Incluye URLs de la app tienda
+    path('', RedirectView.as_view(url='/tienda', permanent=True)),
+    path('i18n/', include('django.conf.urls.i18n')),
+    path('', TemplateView.as_view(template_name='main/index.html'), name='welcome'),
+    path('tienda/', include('tienda.urls')),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,12 +1,39 @@
 {% extends 'tienda/base.html' %}
 
-
 {% block content %}
-    <h1>Modificar Perfil</h1>
+<div class="container my-5">
+    <h1 class="mb-4">Editar Perfil</h1>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Guardar cambios</button>
+        <div class="mb-3">
+            <label for="id_nombre" class="form-label">Nombre</label>
+            {{ form.nombre }}
+            {% if form.nombre.errors %}
+            <div class="text-danger">{{ form.nombre.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_apellidos" class="form-label">Apellidos</label>
+            {{ form.apellidos }}
+            {% if form.apellidos.errors %}
+            <div class="text-danger">{{ form.apellidos.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_email" class="form-label">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <div class="text-danger">{{ form.email.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_nuevo_usuario" class="form-label">Nuevo Nombre de Usuario</label>
+            {{ form.nuevo_usuario }}
+            {% if form.nuevo_usuario.errors %}
+            <div class="text-danger">{{ form.nuevo_usuario.errors }}</div>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
     </form>
-
+</div>
 {% endblock %}

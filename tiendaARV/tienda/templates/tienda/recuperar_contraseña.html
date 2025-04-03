@@ -1,0 +1,21 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <h1>Recuperar Contraseña</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        {% if password_step %}
+            <p class="text-info">Introduce tu nueva contraseña.</p>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">
+            {% if password_step %}
+                Cambiar Contraseña
+            {% else %}
+                Verificar Cuenta
+            {% endif %}
+        </button>
+    </form>
+</div>
+{% endblock %}

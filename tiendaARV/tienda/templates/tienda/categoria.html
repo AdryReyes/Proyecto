@@ -1,0 +1,67 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center">Productos en "{{ categoria.nombre }}"</h1>
+    <p class="text-muted text-center">{{ categoria.descripcion }}</p>
+    
+    <form method="GET" action="{% url 'filtro_marca' categoria.nombre %}">
+        <!-- Filtro por marca -->
+        <div class="mb-3">
+            <h5>Filtrar por marca</h5>
+            {% for marca in marcas %}
+                <div class="form-check">
+                    <input 
+                        type="checkbox" 
+                        class="form-check-input" 
+                        name="marcas" 
+                        value="{{ marca.marca_nombre }}" 
+                        {% if marca.marca_nombre in marcas_seleccionadas %}checked{% endif %}>
+                    <label class="form-check-label">{{ marca.marca_nombre }}</label>
+                </div>
+            {% endfor %}
+        </div>
+    
+        <!-- Filtro por precio -->
+        <div class="mb-3">
+            <h5>Filtrar por precio</h5>
+            <label for="precio_min">Precio mínimo:</label>
+            <input type="number" id="precio_min" name="precio_min" min="0" value="{{ precio_min }}">
+            <label for="precio_max">Precio máximo:</label>
+            <input type="number" id="precio_max" name="precio_max" min="0" value="{{ precio_max }}">
+        </div>
+    
+        <button type="submit" class="btn btn-primary">Aplicar filtros</button>
+    </form>
+    
+
+    <div class="row">
+        {% for producto in productos %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    {% if producto.producto_imagen %}
+                        <img src="{{ producto.producto_imagen.url }}" class="card-img-top d-block w-100" style="height: 200px; object-fit: cover;" alt="{{ producto.producto_nombre }}">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                            <p class="text-muted">Sin imagen disponible</p>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ producto.producto_nombre }}</h5>
+                        <p class="card-text text-secondary">{{ producto.marca }}</p>
+                        {% if producto.descuento %}
+                            <p class="text-danger mb-0">
+                                <small><del>{{ producto.producto_precio }}€</del></small> 
+                                <span class="fw-bold">{{ producto.precio_con_descuento }}€</span>
+                            </p>
+                        {% else %}
+                            <p class="text-success fw-bold">{{ producto.producto_precio }}€</p>
+                        {% endif %}
+                        <a href="{% url 'producto_lista' producto.id %}" class="btn btn-primary">Ver más</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

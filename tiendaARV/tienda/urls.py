@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from . import views
 from .views import *
 from django.conf.urls.static import static
@@ -22,28 +22,32 @@ urlpatterns = [
     path('singin/', registrarse.as_view(), name='singin'),
     path('perfil/', perfil.as_view(), name='perfil'),
     path('perfil/editar/<int:pk>/', perfil_update.as_view(), name='editar_perfil'),
-    path('informe/historialcompras/crear-comentario/<int:item_compra_id>/', comentario_new.as_view(), name='agregarComentario'),
-    path('informe/historialcompras/editar-comentario/<int:item_id>/', comentario_edit.as_view(), name='editarComentario'),
-    path('informe/historialcompras/eliminar-comentario/<int:pk>/', comentario_delete.as_view(), name='eliminarComentario'),
+    path('informe/historialcompras/crear-comentario/<int:pk>/', comentario_new.as_view(), name='agregarComentario'),
+    path('informe/historialcompras/editar-comentario/<int:pk>/', comentario_edit.as_view(), name='editarComentario'),
+    path('eliminar-comentario/<int:pk>/', comentario_delete.as_view(), name='eliminarComentario'),
     path('moderar-comentarios/', comentario_mod.as_view(), name='moderarComentarios'),
     path('perfil/editar/direccion/<int:pk>/', direccion_edit.as_view(), name='editarDireccion'),
     path('perfil/añadir/direccion/', direccion_new.as_view(), name='añadirDireccion'),
     path('perfil/eliminar/direccion/<int:pk>/', direccion_delete.as_view(),name='confirmarEliminarDireccion'),
-    path('perfil/editar/tarjeta-pago/<int:pk>/', tarjeta_edit.as_view(), name='editarTarjetaPago'),
-    path('perfil/añadir/tarjeta-pago/', tarjeta_new.as_view(), name='añadirTarjetaPago'),
-    path('perfil/eliminar/tarjeta-pago/<int:pk>/', tarjeta_delete.as_view(), name='eliminarTarjetaPago'),
     path('carrito/', carrito.as_view(), name='verCarrito'),
-    path('actualizarcarrito/', carrito_update.as_view(), name='actualizarProductoCarrito'),
+    path('actualizarcarrito/', views.carrito_update, name='actualizarProductoCarrito'),
     path('eliminar-carrito/', carrito_delete.as_view(), name='eliminarProductoCarrito'),
-    path('finalizarcompra/', terminar_compra.as_view(), name='finalizarCompra'),
+    path('finalizarcompra/<int:producto_id>/', finalizar_compra, name='finalizarCompra'),
     path('resumencompra/', checkout.as_view(), name='resumenCompra'),
     path('wishlist/', WishlistView.as_view(), name='wishlist'),
     path('wishlist/add/<int:producto_id>/', AddToWishlistView.as_view(), name='add_to_wishlist'),
     path('wishlist/remove/<int:producto_id>/', RemoveFromWishlistView.as_view(), name='remove_from_wishlist'),
-    # path('categoria/<str:categoria_nombre>/', ProductosPorCategoriaView.as_view(), name='productos_por_categoria'),
-    # path('notificaciones/verificar/<int:pk>/', VerificarNotificacionesDescuento.as_view(), name='verificar_descuento'),
-    # path('notificaciones/obtener/', ObtenerNotificaciones.as_view(), name='obtener_notificaciones'),
-    # path('notificaciones/marcar-leidas/', MarcarNotificacionesLeidas.as_view(), name='marcar_notificaciones'),
+    path('productos/<str:categoria_nombre>/', ProductosPorCategoriaView.as_view(), name='productos_por_categoria'),
+    path('recuperar-contraseña/', RecuperarContrasenaView.as_view(), name='recuperar_contraseña'),
+    path('captcha/', include('captcha.urls')),
+    path('gestionar-cuentas/', views.gestionar_cuentas, name='gestionar_cuentas'),
+    path('compra-exitosa/', views.compra_exitosa, name='compra_exitosa'),
+    path('finalizar-compra/', views.finalizar_compra_carrito, name='finalizar_compra'),
+    path('responder-comentarios/<int:pk>', ResponderComentarioView.as_view(), name='responderComentario'),
+    path('productos/buscar/', BuscarPorNombreView.as_view(), name='buscar_por_nombre'),
+    # path('productos/buscar/<str:categoria_nombre>/', views.BuscarPorNombreView.as_view(), name='filtro_busqueda_categoria'),
+    path('productos/<str:categoria_nombre>/filtro/', ProductoFiltroPorMarca.as_view(), name='filtro_marca'),
+    path('productos/<str:categoria_nombre>/precio/', ProductoFiltroPorPrecio.as_view(), name='filtro_precio'),
 
 
 ]

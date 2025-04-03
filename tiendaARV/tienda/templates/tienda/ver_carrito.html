@@ -1,69 +1,82 @@
 {% extends 'tienda/base.html' %}
 
-{% load i18n %}
-
 {% block content %}
+  <h2>Carrito de compras</h2>
 
-    <h1>Carrito</h1>
 
-    {% if productos_carrito %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Precio Unitario</th>
-                    <th>Cantidad</th>
-                    <th>Subtotal</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in productos_carrito %}
-                    <tr>
-                        <td>{{ item.producto.producto_nombre }}</td>
-                        <td>{{ item.producto.producto_precio }} €</td>
-                        <td>
-                            <form action="{% url 'actualizarProductoCarrito' %}" method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="producto_id" value="{{ item.producto.id }}">
-                                <input type="number" name="cantidad" value="{{ item.cantidad }}" min="1">
-                                <button type="submit">Actualizar</button>
-                            </form>
-                        </td>
-                        <td>{{ item.subtotal }} €</td>
-                        <td>
-                            <form action="{% url 'eliminarProductoCarrito' %}" method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="producto_id" value="{{ item.producto.id }}">
-                                <button type="submit">Eliminar</button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3">Total</td>
-                    <td>{{ total_carrito }} €</td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
-    {% else %}
-        <p>No hay productos en el carrito</p>
-    {% endif %}
-
-    <div>
+{% if messages %}
+    <div class="messages">
         {% for message in messages %}
-            <span>{{ message }}</span>
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
         {% endfor %}
     </div>
+{% endif %}
 
-    {% if productos_carrito %}
-        <a href="{% url 'finalizarCompra' %}">Finalizar Compra</a>
-    {% else %}
-        <button disabled>"Finalizar Compra</button>
 
-    {% endif %}
+  {% if productos_carrito %}
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Precio</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <form method="POST" action="{% url 'actualizarProductoCarrito' %}">
+          {% csrf_token %}
+          {% for producto in productos_carrito %}
+            <tr>
+              <td>{{ producto.producto.producto_nombre }}</td>
+              <td>
+                <input type="number" name="cantidad_{{ producto.producto.id }}" value="{{ producto.cantidad }}" min="1">
+              </td>
+              <td>{{ producto.producto.producto_precio }} €</td>
+              <td>{{ producto.subtotal }} €</td>
+            </tr>
+          {% endfor %}
+          <tr>
+            <td colspan="3">Total</td>
+            <td>{{ total_precio }} €</td>
+          </tr>
+          <tr>
+            <td colspan="3">Método de pago</td>
+            <td>
+              <select name="metodo_pago">
+                <option value="visa">Visa</option>
+                <option value="mastercard">Mastercard</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="3">Selecciona tu cuenta</td>
+            <td>
+              <select name="cuenta">
+                {% for cuenta in cuentas %}
+                  <option value="{{ cuenta.id }}">{{ cuenta.nombre }} - {{ cuenta.saldo }} €</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4">
+              <button type="submit">Actualizar carrito</button>
+            </td>
+          </tr>
+        </form>
+      </tbody>
+    </table>
 
+    <form method="POST" action="{% url 'finalizar_compra' %}">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Finalizar Compra</button>
+    </form>
+
+  {% else %}
+    <p>No hay productos en el carrito</p>
+  {% endif %}
 {% endblock %}

@@ -1,0 +1,16 @@
+{% block content %}
+  <h2>Gestionar Cuentas</h2>
+
+  <form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Crear cuenta</button>
+  </form>
+
+  <h3>Mis Cuentas</h3>
+  <ul>
+    {% for cuenta in cuentas %}
+      <li>{{ cuenta.numero_cuenta }} - {{ cuenta.tipo }} - {{ cuenta.saldo }} </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

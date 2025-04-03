@@ -2,7 +2,15 @@
 {% block content %}
     <h2>Iniciar sesión</h2>
     <form method="post">
-        {% csrf_token %} {{ form.as_p }}
+        {% csrf_token %}
+        {{ form.as_p }}
         <button type="submit">Iniciar sesión</button>
+    </form>
+
+    <h3>¿Olvidaste tu contraseña?</h3>
+    <form method="post" action="{% url 'recuperar_contraseña' %}">
+        {% csrf_token %}
+        {{ form_recuperar.as_p }}
+        <button type="submit">Recuperar contraseña</button>
     </form>
 {% endblock %}

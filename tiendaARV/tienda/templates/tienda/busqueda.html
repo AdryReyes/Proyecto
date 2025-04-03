@@ -1,0 +1,50 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center">Búsqueda de productos</h1>
+
+    <!-- Formulario de búsqueda -->
+    <form method="GET" action="{% url 'buscar_por_nombre' %}">
+        <div class="mb-3">
+            <label for="q" class="form-label">Buscar por nombre de producto:</label>
+            <input type="text" id="q" name="q" class="form-control" value="{{ q }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Buscar</button>
+    </form>
+
+    {% if productos %}
+    <h3 class="mt-4">Resultados de búsqueda:</h3>
+    <div class="row">
+        {% for producto in productos %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    {% if producto.producto_imagen %}
+                        <img src="{{ producto.producto_imagen.url }}" class="card-img-top d-block w-100" style="height: 200px; object-fit: cover;" alt="{{ producto.producto_nombre }}">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                            <p class="text-muted">Sin imagen disponible</p>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ producto.producto_nombre }}</h5>
+                        <p class="card-text text-secondary">{{ producto.marca }}</p>
+                        {% if producto.descuento %}
+                            <p class="text-danger mb-0">
+                                <small><del>{{ producto.producto_precio }}€</del></small> 
+                                <span class="fw-bold">{{ producto.precio_con_descuento }}€</span>
+                            </p>
+                        {% else %}
+                            <p class="text-success fw-bold">{{ producto.producto_precio }}€</p>
+                        {% endif %}
+                        <a href="{% url 'producto_lista' producto.id %}" class="btn btn-primary">Ver más</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p>No se encontraron productos para la búsqueda "{{ q }}"</p>
+    {% endif %}
+</div>
+{% endblock %}

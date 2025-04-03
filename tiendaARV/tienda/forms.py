@@ -5,6 +5,7 @@ from .models import *
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, ValidationError
 from django.contrib.auth.models import User
 import re
+from captcha.fields import CaptchaField
 
 class ProductoForm(forms.ModelForm):
 
@@ -73,66 +74,52 @@ class DireccionForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         return cleaned_data
-class TarjetaPagoForm(forms.ModelForm):
-    class Meta:
-        model = TarjetaPago
-        fields = ['nombre', 'tipo', 'titular', 'caducidad']
+    
+# class TarjetaPagoForm(forms.ModelForm):
+#     class Meta:
+#         model = TarjetaPago
+#         fields = ['nombre', 'tipo', 'titular', 'caducidad']
 
 class EditarDatosForm(forms.ModelForm):
-    contraseña = forms.CharField(widget=forms.PasswordInput(render_value=False), required=False)
-    repetir_contraseña = forms.CharField(widget=forms.PasswordInput(render_value=False), required=False)
-    nuevo_usuario = forms.CharField(max_length=150, required=False, label='Nuevo nombre de usuario')
+    nuevo_usuario = forms.CharField(
+        max_length=150, 
+        required=False, 
+        label='Nuevo nombre de usuario',
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = Cliente
+        fields = ['nombre', 'apellidos', 'email']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': 'form-control'})
 
     def clean_nombre(self):
-        nombre = self.cleaned_data['nombre']
+        nombre = self.cleaned_data.get('nombre')  
+        if not nombre:  
+            raise ValidationError("El nombre no puede estar vacío.")
         if not nombre.replace(" ", "").isalpha():
             raise ValidationError("El nombre solo puede contener letras.")
         return nombre
 
     def clean_apellidos(self):
-        apellidos = self.cleaned_data['apellidos']
+        apellidos = self.cleaned_data.get('apellidos')  
+        if not apellidos:  
+            raise ValidationError("Los apellidos no pueden estar vacíos.")
         if not apellidos.replace(" ", "").isalpha():
             raise ValidationError("Los apellidos solo pueden contener letras.")
         return apellidos
 
-    def clean(self):
-        cleaned_data = super().clean()
-        contraseña = cleaned_data.get("contraseña")
-        contraseña2 = cleaned_data.get("repetir_contraseña")
+    def clean_nuevo_usuario(self):
+        nuevo_usuario = self.cleaned_data.get('nuevo_usuario')
+        if nuevo_usuario and User.objects.filter(username=nuevo_usuario).exists():
+            raise ValidationError("Este nombre de usuario ya está en uso.")
+        return nuevo_usuario
 
-        if (contraseña and not contraseña2) or (contraseña2 and not contraseña):
-            raise ValidationError("Ambas contraseñas tienen que estar rellenas.")
-
-        nueva_contraseña = cleaned_data.get("contraseña")
-        contraseña2 = cleaned_data.get("repetir_contraseña")
-        nombre = cleaned_data.get("nombre")
-        apellidos = cleaned_data.get("apellidos")
-
-        if nueva_contraseña and contraseña2:
-            try:
-                validate_password(nueva_contraseña)
-            except ValidationError as e:
-                self.add_error('contraseña', e)
-                return cleaned_data
-
-            if nueva_contraseña.lower() in nombre.lower() or nueva_contraseña.lower() in apellidos.lower():
-                raise ValidationError("La contraseña no puede parecerse al nombre y/o apellido")
-
-            user = self.instance.usuario
-            if user.check_password(nueva_contraseña):
-                raise ValidationError("La nueva contraseña no puede ser igual a la anterior")
-
-        return cleaned_data
-
-    class Meta:
-        model = Cliente
-        fields = ['nombre', 'apellidos', 'email', 'nuevo_usuario', 'contraseña', 'repetir_contraseña']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['nombre'].required = True
-        self.fields['apellidos'].required = True
-        self.fields['email'].required = True
 
 class ComentarioForm(forms.ModelForm):
     VALORACIONES_CHOICES = (
@@ -149,34 +136,72 @@ class ComentarioForm(forms.ModelForm):
         fields = ['comentario', 'valoracion']
 
 
-class EditarTarjetaPagoForm(forms.ModelForm):
-    class Meta:
-        model = TarjetaPago
-        fields = ['nombre', 'tipo', 'titular', 'caducidad']
+# class EditarTarjetaPagoForm(forms.ModelForm):
+#     class Meta:
+#         model = TarjetaPago
+#         fields = ['nombre', 'tipo', 'titular', 'caducidad']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['nombre'].label = 'ID:'
-        self.fields['caducidad'].label = 'Caducidad (DD/MM/AAAA):'
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.fields['nombre'].label = 'ID:'
+#         self.fields['caducidad'].label = 'Caducidad (DD/MM/AAAA):'
 
-    def clean_nombre(self):
-        nombre = self.cleaned_data['nombre']
-        if len(nombre) != 16 or not nombre.isdigit():
-            raise ValidationError('El campo Nombre/ID de la tarjeta debe contener exactamente 16 caracteres numéricos.')
-        return nombre
+#     def clean_nombre(self):
+#         nombre = self.cleaned_data['nombre']
+#         if len(nombre) != 16 or not nombre.isdigit():
+#             raise ValidationError('El campo Nombre/ID de la tarjeta debe contener exactamente 16 caracteres numéricos.')
+#         return nombre
 
-    def clean_titular(self):
-        titular = self.cleaned_data['titular']
-        if any(char.isdigit() for char in titular):
-            raise ValidationError('El campo Titular de la tarjeta no puede contener números.')
-        return titular
+#     def clean_titular(self):
+#         titular = self.cleaned_data['titular']
+#         if any(char.isdigit() for char in titular):
+#             raise ValidationError('El campo Titular de la tarjeta no puede contener números.')
+#         return titular
 
-    def clean_caducidad(self):
-        caducidad = self.cleaned_data['caducidad']
-        if caducidad < timezone.now().date():
-            raise ValidationError('La fecha de caducidad no puede ser anterior a la fecha actual.')
-        return caducidad
+#     def clean_caducidad(self):
+#         caducidad = self.cleaned_data['caducidad']
+#         if caducidad < timezone.now().date():
+#             raise ValidationError('La fecha de caducidad no puede ser anterior a la fecha actual.')
+#         return caducidad
 
 
 class AgregarProductoForm(forms.Form):
     cantidad = forms.IntegerField(label='Cantidad', min_value=1)
+
+class RecuperarContrasenaForm(forms.Form):
+    username = forms.CharField(label='Nombre de Usuario', max_length=150)
+    email = forms.EmailField(label='Correo Electrónico')
+    nueva_contrasena = forms.CharField(label='Nueva Contraseña', widget=forms.PasswordInput, required=False)
+    captcha = CaptchaField()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        username = cleaned_data.get('username')
+        email = cleaned_data.get('email')
+
+        if not User.objects.filter(username=username, email=email).exists():
+            raise forms.ValidationError("El nombre de usuario y correo no coinciden con ninguna cuenta.")
+        return cleaned_data
+
+class SeleccionarCuentaForm(forms.Form):
+    cuenta = forms.ModelChoiceField(queryset=None, label="Selecciona tu cuenta de pago")
+    metodo_pago = forms.ChoiceField(
+        choices=[('visa', 'Visa'), ('mastercard', 'MasterCard')],
+        label="Método de pago"
+    )
+
+    def __init__(self, *args, **kwargs):
+        cliente = kwargs.pop('cliente')
+        super().__init__(*args, **kwargs)
+        self.fields['cuenta'].queryset = CuentaPago.objects.filter(cliente=cliente)  # Carga las cuentas del cliente
+
+
+
+class CrearCuentaForm(forms.ModelForm):
+    class Meta:
+        model = CuentaPago
+        fields = ['tipo', 'numero_cuenta', 'saldo', 'nombre_cuenta']
+
+class ResponderComentarioForm(forms.Form):
+    comentario = forms.CharField(widget=forms.Textarea, label='Tu respuesta')
+    valoracion = forms.IntegerField(min_value=1, max_value=5, label='Valoración')

@@ -1,0 +1,23 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+<!-- responder_comentario.html -->
+<h3>Responder al comentario de {{ comentario.user.username }}</h3>
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="comentario">Tu respuesta</label>
+        <textarea name="comentario" class="form-control" rows="3" placeholder="Escribe tu respuesta aquí"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="valoracion">Valoración</label>
+        <input type="number" name="valoracion" min="1" max="5" class="form-control" placeholder="Valoración (1-5)">
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Responder</button>
+</form>
+
+<!-- Volver al detalle del producto -->
+<a href="{% url 'producto_lista' pk=comentario.producto_compra.producto.pk %}">Volver al producto</a>
+
+{% endblock %}

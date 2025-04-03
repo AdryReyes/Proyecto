@@ -35,12 +35,13 @@
             {% endif %}
             <p class="mt-3">{{ producto.producto_descripcion }}</p>
 
-            <form method="POST" action="{% url 'finalizarCompra' %}">
+            <form method="POST" action="{% url 'finalizarCompra' producto.id %}">
                 {% csrf_token %}
                 <input type="hidden" name="producto_id" value="{{ producto.id }}">
                 <input type="hidden" name="cantidad" value="1">
                 <button type="submit" class="btn btn-primary mt-3">Compra Directa</button>
             </form>
+            
 
             <div class="d-flex align-items-center mt-3">
                 {% if wishlist.exists %}
@@ -79,44 +80,65 @@
         </div>
     </div>
 
-    <!-- Sección de comentarios -->
     <div class="mt-5">
         <h3>Comentarios</h3>
         <hr>
         {% for comentario in comentarios %}
             <div class="mb-3">
-                <strong>{{ comentario.usuario }}</strong> <small class="text-muted">{{ comentario.fecha_publicacion }}</small>
-                <p>{{ comentario.texto }}</p>
-
+                <strong>{{ comentario.user.username }}</strong>
+                <small class="text-muted">{{ comentario.fecha_publicacion }}</small>
+                <p>{{ comentario.comentario }}</p>
+                <p>Valoración: {{ comentario.valoracion }}</p>
+    
                 <!-- Opciones para clientes y moderadores -->
                 <div>
                     {% if user.is_authenticated %}
-                        {% if user == comentario.usuario %}
-                            <a href="{% url 'editarComentario' comentario.id %}" class="btn btn-sm btn-primary">Editar</a>
-                            <a href="{% url 'eliminarComentario' comentario.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                        {% if user == comentario.user %}
+                            <a href="{% url 'editarComentario' comentario.pk %}" class="btn btn-sm btn-primary">Editar</a>
+                            <a href="{% url 'eliminarComentario' comentario.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
                         {% endif %}
                         {% if user.is_staff %}
-                            <a href="{% url 'responderComentario' comentario.id %}" class="btn btn-sm btn-secondary">Responder</a>
+                            <a href="{% url 'responderComentario' comentario.pk %}" class="btn btn-sm btn-secondary">Responder</a>
                         {% endif %}
                     {% endif %}
                 </div>
+    
+                <!-- Respuestas a este comentario -->
+                {% for respuesta in comentario.comentario_set.all %}
+                    <div class="mt-3 pl-4 border-left">
+                        <strong>{{ respuesta.user.username }}</strong>
+                        <small class="text-muted">{{ respuesta.fecha_publicacion }}</small>
+                        <p>{{ respuesta.comentario }}</p>
+                        <p>Valoración: {{ respuesta.valoracion }}</p>
+                    </div>
+                {% empty %}
+                    <p>No hay respuestas a este comentario aún.</p>
+                {% endfor %}
             </div>
         {% empty %}
             <p>No hay comentarios aún. ¡Sé el primero en comentar!</p>
         {% endfor %}
-
-        <!-- Formulario para añadir comentarios -->
-        {% if user.is_authenticated and cliente_ha_comprado %}
+    </div>
+    
+    <!-- Formulario para añadir comentarios, solo si el usuario no tiene un comentario previo -->
+    {% if user.is_authenticated and cliente_ha_comprado %}
+        {% if not ya_comento %}
             <form method="POST" action="{% url 'agregarComentario' producto.pk %}">
                 {% csrf_token %}
                 <div class="form-group">
-                    <textarea name="texto" class="form-control" rows="3" placeholder="Escribe tu comentario aquí"></textarea>
+                    <textarea name="comentario" class="form-control" rows="3" placeholder="Escribe tu comentario aquí"></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary mt-2">Añadir Comentario</button>
             </form>
         {% else %}
-            <p class="text-muted">Debes haber comprado este producto para poder comentar.</p>
+            <p class="text-muted">Ya has comentado este producto.</p>
         {% endif %}
-    </div>
+    {% else %}
+        <p class="text-muted">Debes haber comprado este producto para poder comentar.</p>
+    {% endif %}
+    
+
+
+
 </div>
 {% endblock %}

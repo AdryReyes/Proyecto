@@ -1,0 +1,20 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2>Deja tu Comentario sobre el Producto</h2>
+        <hr>
+        
+        <h4>{{ producto.producto_nombre }}</h4>
+        <p><strong>Modelo:</strong> {{ producto.producto_modelo }}</p>
+
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }} <!-- Esto renderiza los campos del formulario -->
+            
+            <button type="submit" class="btn btn-primary">Enviar Comentario</button>
+        </form>
+
+        <a href="{% url 'producto_lista' producto.pk %}" class="btn btn-secondary mt-3">Volver al Producto</a>
+    </div>
+{% endblock %}

@@ -4,9 +4,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'proyectoTienda',
-        'USER': os.environ.get('DATABASE_USER'),  # Asegúrate de que estas variables de entorno están configuradas correctamente
+        'USER': os.environ.get('DATABASE_USER'),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
-        'HOST': 'db',  # El nombre del servicio en docker-compose
+        'HOST': 'db', 
         'PORT': '5432',
     }
 }
@@ -72,5 +72,19 @@ docker-compose exec web python manage.py migrate -- hacerlo
 
 docker-compose exec web python manage.py runserver
 
+docker-compose exec web python manage.py makemigrations tienda  --> primera migracion si docker no existe
 
+docker-compose exec web python manage.py createsuperuser  --> Crear super usuario
 
+docker-compose exec web python manage.py migrate captcha  --> Para usar captcha
+
+pip install paypalrestsdk --> no sirve
+
+.env:
+SECRET_KEY='django-insecure-f=%5#jp=*oazid97kuvb2w1k%a!f+-^)#yw7%i^rila#&-0mwy'
+DEBUG=True
+DATABASE_NAME=proyectoTienda
+DATABASE_USER=usuario
+DATABASE_PASSWORD=usuario
+DATABASE_HOST=db
+DATABASE_PORT=5432

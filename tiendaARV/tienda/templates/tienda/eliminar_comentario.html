@@ -1,0 +1,13 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+<h2>Eliminar Comentario</h2>
+<p>¿Estás seguro de que deseas eliminar este comentario?</p>
+<p>{{ object.comentario }}</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a href="{% url 'producto_lista' object.producto_compra.producto.pk %}" class="btn btn-secondary">Cancelar</a>
+
+</form>
+{% endblock %}

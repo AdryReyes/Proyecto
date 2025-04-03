@@ -42,20 +42,8 @@
             {% endfor %}
         </ul>
         <a href="{% url 'añadirDireccion' %}">Añadir Dirección</a>
+        {% comment %} <a href="{% url 'gestionarPayPal' %}">Gestionar Cuentas de PayPal</a> {% endcomment %}
 
-        <h2>Tarjetas de Pago:</h2>
-            <ul>
-                {% for tarjeta in tarjetas_pago %}
-                    <li>
-                        <p>ID: {{ tarjeta.nombre }}</p>
-                        <p>Tipo: {{ tarjeta.tipo }}</p>
-                        <p>Titular: {{ tarjeta.titular }}</p>
-                        <p>Caducidad (DD/MM/AAAA): {{ tarjeta.caducidad }}</p>
-                        <a href="{% url 'editarTarjetaPago' pk=tarjeta.pk %}">Editar Tarjeta de Pago</a>
-                        <a href="{% url 'eliminarTarjetaPago' pk=tarjeta.pk %}">Eliminar Tarjeta de Pago</a>
-                    </li>
-                {% endfor %}
-            </ul>
-            <a href="{% url 'añadirTarjetaPago' %}">Añadir Tarjeta de Pago</a>
+
 
 {% endblock %}

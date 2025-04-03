@@ -3,12 +3,11 @@
 <html lang="{% trans "es" %}">
 <head>
     <meta charset="UTF-8"/>
-	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Tienda virtual</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD"></script>
-    <script src="{% static 'tienda/js/notificaciones.js' %}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
 </head>
@@ -17,6 +16,15 @@
     <div>
         <h1><a href="/">Tienda ARV</a></h1>
 
+        <form method="GET" action="{% url 'buscar_por_nombre' %}">
+            <div class="mb-3">
+                <label for="q" class="form-label">Buscar por nombre de producto:</label>
+                <input type="text" id="q" name="q" class="form-control" value="{{ q }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+
+        
         {% if request.user.is_authenticated %}
             <div>¡Bienvenido, {{ request.user.username }}!</div>
             <div>
@@ -51,7 +59,7 @@
         {% endif %}
 
     </div>
-
+    
     {% if request.user.is_authenticated and request.user.cliente %}
     <div>
         <a href="{% url 'verCarrito' %}">Carro de compra</a>
@@ -76,6 +84,21 @@
     {% endif %}
 {% endif %}
 
+<!-- Aquí empieza la sección de categorías -->
+<div>
+    <h3>Categorías</h3>
+    {% if categorias %}
+    <ul>
+        {% for categoria in categorias %}
+            <li><a href="{% url 'productos_por_categoria' categoria.nombre %}">{{ categoria.nombre }}</a></li>
+        {% empty %}
+            <li>No hay categorías disponibles</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No hay categorías disponibles.</p>
+{% endif %}
+</div>
 
     <div>
         <div>

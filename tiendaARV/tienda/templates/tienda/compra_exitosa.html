@@ -1,0 +1,7 @@
+{% extends 'tienda/base.html' %}
+
+{% block content %}
+<h1>{{ mensaje }}</h1>
+<p>Gracias por tu compra. Puedes seguir explorando nuestra tienda.</p>
+<a href="{% url 'welcome' %}">Volver al inicio</a>
+{% endblock %}

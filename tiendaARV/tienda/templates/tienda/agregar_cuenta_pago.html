@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Añadir nueva cuenta de pago</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}  <!-- Muestra el formulario de manera predeterminada -->
+    <button type="submit">Guardar cuenta de pago</button>
+  </form>
+
+  <p><a href="{% url 'nombre_de_la_vista_redirigir' %}">Cancelar</a></p>
+
+  {% if messages %}
+    <ul>
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

@@ -21,7 +21,6 @@ class Cliente(models.Model):
     cliente_id = models.AutoField(primary_key=True)
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     cliente_vip = models.BooleanField(default=False)
-    cliente_saldo = models.IntegerField()
     nombre = models.CharField(max_length=50, blank=True, null=True)
     apellidos = models.CharField(max_length=50, blank=True, null=True)
     email = models.EmailField(max_length=50, blank=False, null=False)  # Obligatorio
@@ -35,6 +34,12 @@ class Cliente(models.Model):
     class Meta:
         verbose_name_plural = "Clientes"
 
+class Categoria(models.Model):
+    nombre = models.CharField(max_length=50, unique=True)
+    descripcion = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.nombre
 
 class Producto(models.Model):
     producto_nombre = models.CharField(max_length=30)
@@ -47,6 +52,7 @@ class Producto(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     descuento = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     producto_imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f'{self.marca} {self.producto_modelo}'
@@ -57,6 +63,13 @@ class Producto(models.Model):
             return self.producto_precio * (1 - self.descuento / 100)
         return self.producto_precio
 
+    def reducir_stock(self, cantidad):
+        """Método para reducir el stock al comprar un producto"""
+        if self.producto_unidades >= cantidad:
+            self.producto_unidades -= cantidad
+            self.save()
+        else:
+            raise ValueError(f"No hay suficiente stock para {self.producto_nombre}")
 
 class Direccion(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
@@ -73,29 +86,15 @@ class Direccion(models.Model):
         verbose_name_plural = "Direcciones"
 
 
-class TarjetaPago(models.Model):
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
-    nombre = models.CharField(max_length=100)
-    tipo = models.CharField(max_length=100, choices=[('Visa', 'Visa'), ('Mastercard', 'Mastercard')])
-    titular = models.CharField(max_length=100)
-    caducidad = models.DateField()
-
-    def __str__(self):
-        return f"{self.tipo} - {self.titular}"
-
-    class Meta:
-        verbose_name_plural = "Tarjetas de Pago"
-
 class Compra(models.Model):
     compra_fecha = models.DateTimeField(default=timezone.now)
-    compra_importe = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(limit_value=0)])
-    compra_iva =  models.DecimalField(max_digits=12, decimal_places=2, default=0.21)
+    compra_importe = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    compra_iva = models.DecimalField(max_digits=12, decimal_places=2, default=0.21)
     usuario = models.ForeignKey(Cliente, on_delete=models.PROTECT)
-    direccion = models.ForeignKey(Direccion, on_delete=models.SET_NULL, blank=False, null=True,related_name='direccion')
-    metodo_pago = models.ForeignKey(TarjetaPago, on_delete=models.SET_NULL, blank=False, null=True)
-    popularidad = models.IntegerField(default=0)
-    metodo_pago = models.CharField(max_length=20, choices=[('stripe', 'Stripe'), ('paypal', 'PayPal')], default='stripe')
+    direccion = models.ForeignKey(Direccion, on_delete=models.SET_NULL, blank=False, null=True, related_name='direccion')
+    metodo_pago = models.CharField(max_length=20, choices=[('visa', 'Visa'), ('mastercard', 'Mastercard')], default='visa')  # Actualizado para otros métodos de pago
     transaccion_id = models.CharField(max_length=255, blank=True, null=True)  # Para almacenar el ID de la transacción
+    popularidad = models.IntegerField(default=0)
 
     def __str__(self):
         return f'{self.usuario} {self.compra_fecha}'
@@ -118,17 +117,18 @@ class producto_compra(models.Model):
 
 
 class Comentario(models.Model):
-    producto_compra = models.OneToOneField(producto_compra, on_delete=models.CASCADE)
+    producto_compra = models.ForeignKey(producto_compra, on_delete=models.CASCADE, related_name="comentarios")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     comentario = models.TextField()
     valoracion = models.IntegerField(default=0, validators=[MinValueValidator(1), MaxValueValidator(5)])
     fecha = models.DateTimeField(default=timezone.now)
     moderado_por = models.ManyToManyField(User, related_name='comentarios_moderados', blank=True)
     aprobado = models.BooleanField(default=False)
-
+    respuesta_a = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='respuestas')
+    
     def __str__(self):
-        return f'{self.user.username} - {self.itemCompra}'
-
+        return f'{self.user.username} - {self.producto_compra}'
+    
     class Meta:
         verbose_name_plural = "Comentarios"
 
@@ -153,6 +153,19 @@ class Wishlist(models.Model):
     class Meta:
         verbose_name_plural = "Wishlist"
         unique_together = ('cliente', 'producto')
+
+
+class CuentaPago(models.Model):
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='cuentas')
+    tipo = models.CharField(max_length=50, choices=[('visa', 'Visa'), ('mastercard', 'Mastercard')])
+    numero_cuenta = models.CharField(max_length=16, unique=True)
+    saldo = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    nombre_cuenta = models.CharField(max_length=100, blank=True, null=True)  # Opcional
+
+    def __str__(self):
+        return f"{self.tipo.capitalize()} - {self.saldo} €"  # Devuelve el tipo de tarjeta y saldo
+
+
 
 # class Notificacion(models.Model):
 #     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notificaciones")

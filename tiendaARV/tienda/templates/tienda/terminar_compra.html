@@ -1,34 +1,59 @@
 {% extends 'tienda/base.html' %}
 
-{% load i18n %}
-
 {% block content %}
+<h1>Finalizar Compra</h1>
 
-    <h1>Finalizar Compra</h1>
+<form method="POST">
+    {% csrf_token %}
 
-    <form method="post">
-      {% csrf_token %}
-      <label for="direccion">Selecciona tu dirección:</label>
-      <select name="direccion" id="direccion">
-        {% for direccion in direcciones %}
-          <option value="{{ direccion.id }}">{{ direccion.calle }}, {{ direccion.ciudad }}, {{ direccion.pais }}</option>
-        {% endfor %}
-      </select><br>
+    <!-- Selección de cuenta de pago -->
+    <label for="cuenta_pago">Método de Pago</label>
+    <select name="cuenta_pago" id="cuenta_pago" required>
+        {% if cuentas %}
+            {% for cuenta in cuentas %}
+                <option value="{{ cuenta.id }}">
+                    {{ cuenta.tipo }} - {{ cuenta.numero|slice:-4 }} (Saldo: {{ cuenta.saldo|floatformat:2 }} €)
+                </option>
+            {% endfor %}
+        {% else %}
+            <option disabled>No tienes cuentas de pago registradas</option>
+        {% endif %}
+    </select>
 
-      <label for="tarjeta_pago">Selecciona tu tarjeta de pago:</label>
-      <select name="tarjeta_pago" id="tarjeta_pago">
-        {% for tarjeta_pago in tarjetas_pago %}
-          <option value="{{ tarjeta_pago.id }}">{{ tarjeta_pago.tipo }} - {{ tarjeta_pago.titular }}</option>
-        {% endfor %}
-      </select><br>
+    <!-- Dirección de envío -->
+    <label for="direccion">Dirección de Envío</label>
+    <select name="direccion" id="direccion" required>
+        {% if direcciones %}
+            {% for direccion in direcciones %}
+                <option value="{{ direccion.id }}">{{ direccion.calle }}, {{ direccion.ciudad }}</option>
+            {% endfor %}
+        {% else %}
+            <option disabled>No hay direcciones disponibles</option>
+        {% endif %}
+    </select>
 
-      <button type="submit">Finalizar Compra</button>
+    <!-- Producto ID y cantidad -->
+    <input type="hidden" name="producto_id" value="{{ producto.id }}">
+    <input type="hidden" name="cantidad" value="1">
+
+    <!-- Botón de envío -->
+    {% if cuentas and direcciones %}
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Finalizar Compra</button>
     </form>
+    
+    {% else %}
+        <p style="color: red;">
+            No puedes proceder con la compra. Asegúrate de tener una cuenta de pago y una dirección configurada.
+        </p>
+    {% endif %}
+</form>
 
-    <div>
-        {% for message in messages %}
-            <span>{{ message }}</span>
-        {% endfor %}
-    </div>
+<!-- Enlace para añadir nueva cuenta -->
+<p>
+    <a href="{% url 'gestionar_cuentas' %}">Añadir una nueva cuenta de pago</a>
+</p>
 
 {% endblock %}
