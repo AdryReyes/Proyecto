@@ -1,23 +1,31 @@
 {% extends 'tienda/base.html' %}
 
 {% block content %}
-<!-- responder_comentario.html -->
-<h3>Responder al comentario de {{ comentario.user.username }}</h3>
+<div class="container my-5">
+    <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 600px;">
+        <h3 class="mb-4 text-center">Responder al comentario de <strong>{{ comentario.user.username }}</strong></h3>
 
-<form method="POST">
-    {% csrf_token %}
-    <div class="form-group">
-        <label for="comentario">Tu respuesta</label>
-        <textarea name="comentario" class="form-control" rows="3" placeholder="Escribe tu respuesta aquí"></textarea>
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="comentario" class="form-label">Tu respuesta</label>
+                <textarea name="comentario" class="form-control" rows="3" placeholder="Escribe tu respuesta aquí"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="valoracion" class="form-label">Valoración</label>
+                <input type="number" name="valoracion" min="1" max="5" class="form-control" placeholder="Valoración (1-5)">
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary px-4">Responder</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-4">
+            <a href="{% url 'producto_lista' pk=comentario.producto_compra.producto.pk %}" class="btn btn-outline-secondary">Volver al producto</a>
+        </div>
     </div>
-    <div class="form-group">
-        <label for="valoracion">Valoración</label>
-        <input type="number" name="valoracion" min="1" max="5" class="form-control" placeholder="Valoración (1-5)">
-    </div>
-    <button type="submit" class="btn btn-primary mt-2">Responder</button>
-</form>
-
-<!-- Volver al detalle del producto -->
-<a href="{% url 'producto_lista' pk=comentario.producto_compra.producto.pk %}">Volver al producto</a>
-
+</div>
 {% endblock %}

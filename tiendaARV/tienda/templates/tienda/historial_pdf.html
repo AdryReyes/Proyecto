@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; }
+        h2 { text-align: center; }
+        .compra { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        .producto { margin-left: 20px; }
+    </style>
+</head>
+<body>
+    <h2>Historial de Compras - {{ cliente }}</h2>
+    
+    {% for compra, items in compras_con_items %}
+        <div class="compra">
+            <strong>Fecha:</strong> {{ compra.compra_fecha }}<br>
+            <strong>Dirección:</strong> {{ compra.direccion }}<br>
+            <strong>Método de pago:</strong> {{ compra.metodo_pago.tipo }} ({{ compra.metodo_pago.titular }})<br>
+            <br>
+            {% for item in items %}
+                <div class="producto">
+                    <strong>Producto:</strong> {{ item.producto.producto_nombre }}<br>
+                    Marca: {{ item.producto.marca }}<br>
+                    Precio: {{ item.precio }} €<br>
+                    Unidades: {{ item.unidades }}<br><br>
+                </div>
+            {% endfor %}
+        </div>
+    {% empty %}
+        <p>No hay compras registradas.</p>
+    {% endfor %}
+</body>
+</html>

@@ -2,11 +2,18 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, 
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db.models import Count, Sum, Avg, F, ExpressionWrapper, DecimalField, Q
+from django.dispatch import receiver
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
 from decimal import Decimal, InvalidOperation
+from django.core.cache import cache
+from paypal.standard.models import ST_PP_COMPLETED
+from paypal.standard.forms import PayPalPaymentsForm
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+
 
 import paypalrestsdk
 from paypalrestsdk import Payment
@@ -25,7 +32,7 @@ from django.db import transaction
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView
 
-from django.http import HttpResponseForbidden, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseRedirect
 
 
 
@@ -557,28 +564,42 @@ def finalizar_compra(request, producto_id):
     if request.method == 'POST':
         form = SeleccionarCuentaForm(request.POST, cliente=cliente)
         if form.is_valid():
-            cuenta = form.cleaned_data['cuenta']
-            if cuenta.saldo >= producto.producto_precio:
-                # Verificar si hay suficiente stock
-                cantidad_deseada = 1  # O la cantidad seleccionada por el usuario
-                try:
-                    producto.reducir_stock(cantidad_deseada)  # Reduce el stock
-                    cuenta.saldo -= producto.producto_precio
-                    cuenta.save()
-                    # Registrar la compra y otros pasos...
-                    return redirect('compra_exitosa')
-                except ValueError as e:
-                    return render(request, 'error.html', {'mensaje': str(e)})
-            else:
-                return render(request, 'error.html', {'mensaje': 'Saldo insuficiente en esta cuenta'})
+            cantidad_deseada = 1  # Puedes hacer que el usuario seleccione más adelante si quieres
+
+            try:
+                producto.reducir_stock(cantidad_deseada)  # Reducir stock
+                # Crear la compra
+                compra = Compra.objects.create(
+                    usuario=cliente,
+                    direccion=direcciones.first(),
+                    metodo_pago=form.cleaned_data['metodo_pago'],
+                    compra_importe=producto.producto_precio,
+                    transaccion_id='',  # Se llenará después del pago real
+                    compra_fecha=timezone.now()
+                )
+
+                # Registrar el producto comprado
+                producto_compra.objects.create(
+                    compra=compra,
+                    producto=producto,
+                    unidades=cantidad_deseada,
+                    precio=producto.producto_precio
+                )
+
+                return redirect('compra_exitosa')
+
+            except ValueError as e:
+                return render(request, 'error.html', {'mensaje': str(e)})
+
         else:
             return render(request, 'tienda/terminar_compra.html', {
                 'producto': producto,
                 'form': form,
                 'cuentas': cuentas,
                 'direcciones': direcciones,
-                'errores': form.errors  # Muestra los errores en el formulario
+                'errores': form.errors
             })
+
     else:
         form = SeleccionarCuentaForm(cliente=cliente)
 
@@ -613,7 +634,6 @@ def finalizar_compra_carrito(request):
     cuentas = cliente.cuentas.all()
     direcciones = cliente.direccion_set.all()
 
-    # Recuperar los productos del carrito
     carrito = request.session.get('carrito', {})
     if not carrito:
         messages.error(request, "Tu carrito está vacío.")
@@ -623,18 +643,15 @@ def finalizar_compra_carrito(request):
     total_precio = 0
     stock_insuficiente = False
 
-    # Verificar stock
     for producto_id, info_producto in carrito.items():
         producto = Producto.objects.get(id=producto_id)
         cantidad_producto = info_producto['cantidad']
 
-        # Verificar si la cantidad excede el stock disponible
         if cantidad_producto > producto.producto_unidades:
             stock_insuficiente = True
             mensaje_error = f"No hay suficiente stock para el producto {producto.producto_nombre}. Solo quedan {producto.producto_unidades} unidades."
             messages.error(request, mensaje_error)
-        
-        # Si todo está bien, calcula el subtotal
+
         subtotal_producto = producto.producto_precio * cantidad_producto
         productos_carrito.append({
             'producto': producto,
@@ -644,52 +661,44 @@ def finalizar_compra_carrito(request):
         total_precio += subtotal_producto
 
     if stock_insuficiente:
-        return redirect('verCarrito')  # Redirige al carrito si hay un problema con el stock
+        return redirect('verCarrito')
 
     if request.method == 'POST':
         form = SeleccionarCuentaForm(request.POST, cliente=cliente)
         if form.is_valid():
-            cuenta = form.cleaned_data['cuenta']
-            metodo_pago = form.cleaned_data['metodo_pago']
+            # Crear la compra
+            compra = Compra.objects.create(
+                usuario=cliente,
+                direccion=direcciones.first(),
+                metodo_pago=form.cleaned_data['metodo_pago'],
+                compra_importe=total_precio,
+                transaccion_id='',  # Se llenará después del pago real
+                compra_fecha=timezone.now()
+            )
 
-            if cuenta.saldo >= total_precio:
-                cuenta.saldo -= total_precio
-                cuenta.save()
-
-                # Crear la compra
-                compra = Compra.objects.create(
-                    usuario=cliente,
-                    direccion=direcciones.first(),
-                    metodo_pago=metodo_pago,
-                    compra_importe=total_precio,
-                    transaccion_id='1234567890',
-                    compra_fecha=timezone.now()
+            # Registrar productos comprados
+            for producto_id, info_producto in carrito.items():
+                producto = Producto.objects.get(id=producto_id)
+                producto_compra.objects.create(
+                    compra=compra,
+                    producto=producto,
+                    unidades=info_producto['cantidad'],
+                    precio=producto.producto_precio
                 )
 
-                # Registrar productos comprados
-                for producto_id, info_producto in carrito.items():
-                    producto = Producto.objects.get(id=producto_id)
-                    producto_compra.objects.create(
-                        compra=compra,
-                        producto=producto,
-                        unidades=info_producto['cantidad'],
-                        precio=producto.producto_precio
-                    )
+            # Vaciar carrito
+            request.session['carrito'] = {}
+            messages.success(request, "Compra realizada con éxito.")
+            return redirect('compra_exitosa')
 
-                # Vaciar carrito
-                request.session['carrito'] = {}
-                messages.success(request, "Compra realizada con éxito.")
-                return redirect('compra_exitosa')
-
-            else:
-                messages.error(request, "Saldo insuficiente.")
-                return render(request, 'tienda/ver_carrito.html', {
-                    'form': form,
-                    'cuentas': cuentas,
-                    'direcciones': direcciones,
-                    'productos_carrito': productos_carrito,
-                    'total_precio': total_precio
-                })
+        else:
+            return render(request, 'tienda/ver_carrito.html', {
+                'form': form,
+                'cuentas': cuentas,
+                'direcciones': direcciones,
+                'productos_carrito': productos_carrito,
+                'total_precio': total_precio
+            })
 
     else:
         form = SeleccionarCuentaForm(cliente=cliente)
@@ -1077,3 +1086,205 @@ class ProductoFiltroPorPrecio(ListView):
         categoria = get_object_or_404(Categoria, nombre=categoria_nombre)  # Busca la categoría
         context['categoria'] = categoria  # Agrega la categoría al contexto
         return context
+    
+
+
+def procesar_pago_paypal(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    try:
+        cliente = Cliente.objects.get(usuario=request.user)
+    except Cliente.DoesNotExist:
+        return redirect('perfil')  # O algún mensaje de error
+
+    # Supongamos que tienes una función que extrae los productos del carrito (de sesión)
+    carrito = request.session.get('carrito', {})
+
+    if not carrito:
+        return redirect('carrito')  # Carrito vacío
+
+    productos = []
+    total = Decimal('0.00')
+
+    for producto_id, cantidad in carrito.items():
+        try:
+            producto = Producto.objects.get(pk=producto_id)
+            precio_final = producto.precio_con_descuento
+            productos.append({
+                'producto_id': producto.id,
+                'unidades': cantidad,
+                'precio': float(precio_final)
+            })
+            total += precio_final * cantidad
+        except Producto.DoesNotExist:
+            continue
+
+    # Obtener la dirección por defecto o permitir seleccionar
+    direccion_id = request.session.get("direccion_id")
+    try:
+        direccion = Direccion.objects.get(pk=direccion_id)
+    except Direccion.DoesNotExist:
+        return redirect('seleccionar_direccion')
+
+    # Crear invoice único
+    invoice_id = str(uuid.uuid4())
+
+    # Guardar en caché por 1 hora
+    cache.set(f"paypal_cart_{invoice_id}", {
+        'usuario_id': cliente.id,
+        'productos': productos,
+        'direccion_id': direccion.id,
+        'importe': float(total),
+    }, timeout=3600)
+
+    # Configurar formulario de PayPal
+    paypal_dict = {
+        "business": settings.PAYPAL_RECEIVER_EMAIL,
+        "amount": f"{total:.2f}",
+        "item_name": "Compra en Tienda ARV",
+        "invoice": invoice_id,
+        "currency_code": "EUR",
+        "notify_url": request.build_absolute_uri(reverse("paypal-ipn")),
+        "return": request.build_absolute_uri(reverse("pago_exitoso")),
+        "cancel_return": request.build_absolute_uri(reverse("pago_cancelado")),
+    }
+
+    form = PayPalPaymentsForm(initial=paypal_dict)
+    context = {"form": form}
+    return render(request, "tienda/pago_paypal.html", context)
+
+
+def procesar_pago_paypal(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    try:
+        cliente = Cliente.objects.get(usuario=request.user)
+    except Cliente.DoesNotExist:
+        return redirect('perfil')  # O algún mensaje de error
+
+    # Supongamos que tienes una función que extrae los productos del carrito (de sesión)
+    carrito = request.session.get('carrito', {})
+
+    if not carrito:
+        return redirect('carrito')  # Carrito vacío
+
+    productos = []
+    total = Decimal('0.00')
+
+    for producto_id, cantidad in carrito.items():
+        try:
+            producto = Producto.objects.get(pk=producto_id)
+            precio_final = producto.precio_con_descuento
+            productos.append({
+                'producto_id': producto.id,
+                'unidades': cantidad,
+                'precio': float(precio_final)
+            })
+            total += precio_final * cantidad
+        except Producto.DoesNotExist:
+            continue
+
+    # Obtener la dirección por defecto o permitir seleccionar
+    direccion_id = request.session.get("direccion_id")
+    try:
+        direccion = Direccion.objects.get(pk=direccion_id)
+    except Direccion.DoesNotExist:
+        return redirect('seleccionar_direccion')
+
+    # Crear invoice único
+    invoice_id = str(uuid.uuid4())
+
+    # Guardar en caché por 1 hora
+    cache.set(f"paypal_cart_{invoice_id}", {
+        'usuario_id': cliente.id,
+        'productos': productos,
+        'direccion_id': direccion.id,
+        'importe': float(total),
+    }, timeout=3600)
+
+    # Configurar formulario de PayPal
+    paypal_dict = {
+        "business": settings.PAYPAL_RECEIVER_EMAIL,
+        "amount": f"{total:.2f}",
+        "item_name": "Compra en Tienda ARV",
+        "invoice": invoice_id,
+        "currency_code": "EUR",
+        "notify_url": request.build_absolute_uri(reverse("paypal-ipn")),
+        "return": request.build_absolute_uri(reverse("pago_exitoso")),
+        "cancel_return": request.build_absolute_uri(reverse("pago_cancelado")),
+    }
+
+    form = PayPalPaymentsForm(initial=paypal_dict)
+    context = {"form": form}
+    return render(request, "tienda/pago_paypal.html", context)
+
+
+def pago_exitoso(request):
+    invoice_id = request.GET.get('invoice')
+
+    if not invoice_id:
+        return redirect('index')  # O página de error
+
+    datos_cache = cache.get(f"paypal_cart_{invoice_id}")
+
+    if not datos_cache:
+        return render(request, 'tienda/pago_error.html', {"mensaje": "No se encontró la información del carrito."})
+
+    try:
+        cliente = Cliente.objects.get(pk=datos_cache['usuario_id'])
+        direccion = Direccion.objects.get(pk=datos_cache['direccion_id'])
+    except (Cliente.DoesNotExist, Direccion.DoesNotExist):
+        return render(request, 'tienda/pago_error.html', {"mensaje": "Usuario o dirección inválida."})
+
+    # Crear la compra
+    compra = Compra.objects.create(
+        usuario=cliente,
+        direccion=direccion,
+        metodo_pago="PayPal",
+        transaccion_id=invoice_id,
+        importe=datos_cache['importe'],
+    )
+
+    # Crear productos de la compra
+    for item in datos_cache['productos']:
+        try:
+            producto = Producto.objects.get(pk=item['producto_id'])
+            producto_compra.objects.create(
+                compra=compra,
+                producto=producto,
+                unidades=item['unidades'],
+                precio=item['precio'],
+            )
+        except Producto.DoesNotExist:
+            continue
+
+    # Limpiar carrito
+    request.session['carrito'] = {}
+    cache.delete(f"paypal_cart_{invoice_id}")
+
+    return render(request, 'tienda/pago_exitoso.html', {'compra': compra})
+
+@login_required
+def exportar_historial_pdf(request):
+    compras = Compra.objects.filter(cliente=request.user.cliente).select_related('direccion', 'metodo_pago')
+    compras_con_items = []
+
+    for compra in compras:
+        items = producto_compra.objects.filter(compra=compra).select_related('producto')
+        compras_con_items.append((compra, items))
+
+    template_path = 'tienda/historial_pdf.html'
+    context = {'compras_con_items': compras_con_items, 'cliente': request.user.cliente}
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="historial_compras.pdf"'
+
+    template = get_template(template_path)
+    html = template.render(context)
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse('Hubo un error al generar el PDF.', status=500)
+    return response

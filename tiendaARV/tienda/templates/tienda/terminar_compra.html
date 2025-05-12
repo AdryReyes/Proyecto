@@ -1,59 +1,43 @@
 {% extends 'tienda/base.html' %}
 
 {% block content %}
-<h1>Finalizar Compra</h1>
+<div class="container my-5">
+    <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 600px;">
+        <h2 class="text-center mb-4">Finalizar Compra</h2>
 
-<form method="POST">
-    {% csrf_token %}
+        {% if cuentas and direcciones %}
+            <form method="POST" class="mb-4">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
 
-    <!-- Selección de cuenta de pago -->
-    <label for="cuenta_pago">Método de Pago</label>
-    <select name="cuenta_pago" id="cuenta_pago" required>
-        {% if cuentas %}
-            {% for cuenta in cuentas %}
-                <option value="{{ cuenta.id }}">
-                    {{ cuenta.tipo }} - {{ cuenta.numero|slice:-4 }} (Saldo: {{ cuenta.saldo|floatformat:2 }} €)
-                </option>
-            {% endfor %}
+                <div class="text-center">
+                    <button type="submit" class="btn btn-success w-100">Finalizar Compra</button>
+                </div>
+            </form>
+
+            {% if form_paypal %}
+                <form action="{{ form_paypal.get_redirect_url }}" method="post" class="text-center">
+                    <input type="submit" value="Pagar con PayPal" class="btn btn-primary w-100">
+                </form>
+            {% endif %}
+
         {% else %}
-            <option disabled>No tienes cuentas de pago registradas</option>
+            <div class="alert alert-danger text-center">
+                No puedes proceder con la compra. Asegúrate de tener una cuenta de pago y una dirección configurada.
+            </div>
         {% endif %}
-    </select>
 
-    <!-- Dirección de envío -->
-    <label for="direccion">Dirección de Envío</label>
-    <select name="direccion" id="direccion" required>
-        {% if direcciones %}
-            {% for direccion in direcciones %}
-                <option value="{{ direccion.id }}">{{ direccion.calle }}, {{ direccion.ciudad }}</option>
-            {% endfor %}
-        {% else %}
-            <option disabled>No hay direcciones disponibles</option>
-        {% endif %}
-    </select>
-
-    <!-- Producto ID y cantidad -->
-    <input type="hidden" name="producto_id" value="{{ producto.id }}">
-    <input type="hidden" name="cantidad" value="1">
-
-    <!-- Botón de envío -->
-    {% if cuentas and direcciones %}
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Finalizar Compra</button>
-    </form>
-    
-    {% else %}
-        <p style="color: red;">
-            No puedes proceder con la compra. Asegúrate de tener una cuenta de pago y una dirección configurada.
-        </p>
-    {% endif %}
-</form>
-
-<!-- Enlace para añadir nueva cuenta -->
-<p>
-    <a href="{% url 'gestionar_cuentas' %}">Añadir una nueva cuenta de pago</a>
-</p>
-
+        <div class="text-center mt-3">
+            <a href="{% url 'gestionar_cuentas' %}" class="btn btn-outline-secondary">Añadir una nueva cuenta de pago</a>
+        </div>
+    </div>
+</div>
 {% endblock %}

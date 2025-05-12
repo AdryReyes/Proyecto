@@ -1,7 +1,12 @@
 {% extends 'tienda/base.html' %}
 
 {% block content %}
-<h1>{{ mensaje }}</h1>
-<p>Gracias por tu compra. Puedes seguir explorando nuestra tienda.</p>
-<a href="{% url 'welcome' %}">Volver al inicio</a>
+<div class="container my-5">
+    <div class="card shadow-sm border-0 text-center p-5">
+        <h1 class="text-success fw-bold mb-3">{{ mensaje }}</h1>
+        <p class="text-muted fs-5">Gracias por tu compra. Puedes seguir explorando nuestra tienda.</p>
+        
+        <a href="{% url 'welcome' %}" class="btn btn-dark mt-4 px-4 py-2">Volver al inicio</a>
+    </div>
+</div>
 {% endblock %}

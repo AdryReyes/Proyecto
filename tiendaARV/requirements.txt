@@ -15,5 +15,6 @@ python-dotenv
 Pillow
 django-simple-captcha==0.6.0
 paypalrestsdk==1.13.3
-
+django-paypal
+xhtml2pdf
 

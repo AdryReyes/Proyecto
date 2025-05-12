@@ -1,16 +1,29 @@
 {% extends 'tienda/base.html' %}
 
 {% block content %}
-
-    <h1 >Marcas</h1>
+<div class="container my-5">
+    <h1 class="text-center mb-5">Marcas</h1>
 
     {% for marca in marcas %}
-        <h4>{{ marca }}</h4>
-        {% for producto in productos %}
-            {% if producto.marca == marca %}
-                <div>{{ producto }}</div>
-            {% endif %}
-        {% endfor %}
-    {% endfor %}
+        <div class="mb-4">
+            <h4 class="fw-bold border-bottom pb-2">{{ marca }}</h4>
 
+            <div class="row">
+                {% for producto in productos %}
+                    {% if producto.marca == marca %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ producto.producto_nombre }}</h5>
+                                    <p class="card-text">{{ producto.producto_modelo }}</p>
+                                    <a href="{% url 'producto_lista' producto.pk %}" class="btn btn-outline-primary btn-sm">Ver más</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
 {% endblock %}

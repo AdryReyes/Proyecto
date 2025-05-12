@@ -1,54 +1,62 @@
 {% extends 'tienda/base.html' %}
-
 {% load i18n %}
 
 {% block content %}
+<div class="container my-5">
     {% if producto_agregado %}
-        <p>¡El producto se ha agregado al carrito!</p>
+        <div class="alert alert-success text-center">¡El producto se ha agregado al carrito!</div>
     {% endif %}
 
-    <h1>"Página de Compra"</h1>
+    <div class="card shadow p-4">
+        <h2 class="mb-4 text-center">Página de Compra</h2>
 
-    <div>
-        <div>
-            <div>"Nombre:"<div>{{ producto.producto_nombre }}</div></div>
-            <div>"Marca:"<div>{{ producto.marca }}</div></div>
-            <div>"Unidades disponibles:"<div>{{ producto.producto_unidades }}</div></div>
-            <div>"Precio:"<div>{{ producto.producto_precio }}€</div></div>
-            <br>
-            {% if producto.vip %}
-                <div>"El producto es VIP"</div>
-            {% endif %}
-            {% if request.user.is_authenticated %}
-                {% if request.user.cliente %}
-                    {% if producto.vip and not request.user.cliente.vip %}
-                        <div>
-                           "Solo los usuarios VIP pueden comprar productos VIP."
-                        </div>
-                    {% else %}
-                        <form method="post">
-                            {% csrf_token %}
-                            <input type="number" name="cantidad" value="1" min="1" max="{{ producto.unidades }}">
-                            <button type="submit">"Comprar"</button>
-                        </form>
-                        {% if messages %}
-                            <div>
-                                {% for message in messages %}
-                                    {{ message }}
-                                {% endfor %}
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item"><strong>Nombre:</strong> {{ producto.producto_nombre }}</li>
+                    <li class="list-group-item"><strong>Marca:</strong> {{ producto.marca }}</li>
+                    <li class="list-group-item"><strong>Unidades disponibles:</strong> {{ producto.producto_unidades }}</li>
+                    <li class="list-group-item"><strong>Precio:</strong> {{ producto.producto_precio }}€</li>
+                    {% if producto.vip %}
+                        <li class="list-group-item text-warning"><strong>Producto VIP</strong></li>
+                    {% endif %}
+                </ul>
+
+                {% if request.user.is_authenticated %}
+                    {% if request.user.cliente %}
+                        {% if producto.vip and not request.user.cliente.vip %}
+                            <div class="alert alert-warning text-center">
+                                Solo los usuarios <strong>VIP</strong> pueden comprar productos VIP.
                             </div>
+                        {% else %}
+                            <form method="post" class="text-center">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="cantidad" class="form-label">Cantidad:</label>
+                                    <input type="number" id="cantidad" name="cantidad" value="1" min="1" max="{{ producto.producto_unidades }}" class="form-control w-50 mx-auto">
+                                </div>
+                                <button type="submit" class="btn btn-success">Comprar</button>
+                            </form>
+                            {% if messages %}
+                                <div class="mt-3">
+                                    {% for message in messages %}
+                                        <div class="alert alert-info text-center">{{ message }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         {% endif %}
+                    {% else %}
+                        <div class="alert alert-danger text-center">
+                            No puedes comprar productos al no ser cliente registrado.
+                        </div>
                     {% endif %}
                 {% else %}
-                    <div>
-                        No puedes comprar productos al no ser cliente.
+                    <div class="alert alert-primary text-center">
+                        Inicia sesión para comprar este producto.
                     </div>
                 {% endif %}
-            {% else %}
-                <div>
-                    Inicia sesión para comprar este producto.
-                </div>
-            {% endif %}
+            </div>
         </div>
     </div>
+</div>
 {% endblock %}

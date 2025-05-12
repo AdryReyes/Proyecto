@@ -2,66 +2,77 @@
 
 {% block content %}
 <div class="container my-5">
-    <h1 class="text-center">Productos en "{{ categoria.nombre }}"</h1>
-    <p class="text-muted text-center">{{ categoria.descripcion }}</p>
-    
-    <form method="GET" action="{% url 'filtro_marca' categoria.nombre %}">
-        <!-- Filtro por marca -->
-        <div class="mb-3">
-            <h5>Filtrar por marca</h5>
-            {% for marca in marcas %}
-                <div class="form-check">
-                    <input 
-                        type="checkbox" 
-                        class="form-check-input" 
-                        name="marcas" 
-                        value="{{ marca.marca_nombre }}" 
-                        {% if marca.marca_nombre in marcas_seleccionadas %}checked{% endif %}>
-                    <label class="form-check-label">{{ marca.marca_nombre }}</label>
-                </div>
-            {% endfor %}
-        </div>
-    
-        <!-- Filtro por precio -->
-        <div class="mb-3">
-            <h5>Filtrar por precio</h5>
-            <label for="precio_min">Precio mínimo:</label>
-            <input type="number" id="precio_min" name="precio_min" min="0" value="{{ precio_min }}">
-            <label for="precio_max">Precio máximo:</label>
-            <input type="number" id="precio_max" name="precio_max" min="0" value="{{ precio_max }}">
-        </div>
-    
-        <button type="submit" class="btn btn-primary">Aplicar filtros</button>
-    </form>
-    
+    <h1 class="text-center mb-2">Productos en "{{ categoria.nombre }}"</h1>
+    <p class="text-muted text-center mb-4">{{ categoria.descripcion }}</p>
 
-    <div class="row">
-        {% for producto in productos %}
-            <div class="col-md-4 mb-4">
-                <div class="card">
+    <!-- Filtros -->
+    <form method="GET" action="{% url 'filtro_marca' categoria.nombre %}" class="mb-5">
+        <div class="row g-4">
+            <!-- Marcas -->
+            <div class="col-md-6">
+                <h5 class="mb-3">Filtrar por marca</h5>
+                {% for marca in marcas %}
+                    <div class="form-check">
+                        <input 
+                            type="checkbox" 
+                            class="form-check-input" 
+                            name="marcas" 
+                            value="{{ marca.marca_nombre }}" 
+                            {% if marca.marca_nombre in marcas_seleccionadas %}checked{% endif %}>
+                        <label class="form-check-label">{{ marca.marca_nombre }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Precio -->
+            <div class="col-md-6">
+                <h5 class="mb-3">Filtrar por precio</h5>
+                <div class="mb-2">
+                    <label for="precio_min" class="form-label">Precio mínimo:</label>
+                    <input type="number" id="precio_min" name="precio_min" min="0" value="{{ precio_min }}" class="form-control">
+                </div>
+                <div>
+                    <label for="precio_max" class="form-label">Precio máximo:</label>
+                    <input type="number" id="precio_max" name="precio_max" min="0" value="{{ precio_max }}" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-dark px-4">Aplicar filtros</button>
+        </div>
+    </form>
+
+    <!-- Productos -->
+    {% if productos %}
+        <div class="d-flex overflow-auto gap-3 pb-2">
+            {% for producto in productos %}
+                <div class="card shadow-sm border-0" style="min-width: 250px; max-width: 250px;">
                     {% if producto.producto_imagen %}
-                        <img src="{{ producto.producto_imagen.url }}" class="card-img-top d-block w-100" style="height: 200px; object-fit: cover;" alt="{{ producto.producto_nombre }}">
+                        <img src="{{ producto.producto_imagen.url }}" class="card-img-top" alt="{{ producto.producto_nombre }}" style="height: 180px; object-fit: cover;">
                     {% else %}
-                        <div class="d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
-                            <p class="text-muted">Sin imagen disponible</p>
+                        <div class="d-flex align-items-center justify-content-center bg-light" style="height: 180px;">
+                            <p class="text-muted">Sin imagen</p>
                         </div>
                     {% endif %}
                     <div class="card-body">
-                        <h5 class="card-title">{{ producto.producto_nombre }}</h5>
-                        <p class="card-text text-secondary">{{ producto.marca }}</p>
+                        <h6 class="fw-bold mb-1">{{ producto.producto_nombre }}</h6>
+                        <p class="text-muted small mb-1">{{ producto.marca }}</p>
                         {% if producto.descuento %}
-                            <p class="text-danger mb-0">
-                                <small><del>{{ producto.producto_precio }}€</del></small> 
-                                <span class="fw-bold">{{ producto.precio_con_descuento }}€</span>
+                            <p class="mb-2">
+                                <small class="text-danger"><del>{{ producto.producto_precio }}€</del></small><br>
+                                <span class="fw-bold text-success">{{ producto.precio_con_descuento }}€</span>
                             </p>
                         {% else %}
-                            <p class="text-success fw-bold">{{ producto.producto_precio }}€</p>
+                            <p class="text-success fw-bold mb-2">{{ producto.producto_precio }}€</p>
                         {% endif %}
-                        <a href="{% url 'producto_lista' producto.id %}" class="btn btn-primary">Ver más</a>
+                        <a href="{% url 'producto_lista' producto.id %}" class="btn btn-outline-dark btn-sm w-100">Ver más</a>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
-    </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center text-muted mt-4">No se encontraron productos con esos filtros.</p>
+    {% endif %}
 </div>
+{% endblock %}
 {% endblock %} 

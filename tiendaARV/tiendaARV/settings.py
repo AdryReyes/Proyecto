@@ -29,7 +29,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tienda',
     'captcha',
+    'paypal.standard.ipn',
 ]
+
+PAYPAL_RECEIVER_EMAIL = 'tsb-dkoxp31869148@business.example.com'
+PAYPAL_TEST = True
 
 CAPTCHA_OUTPUT_FORMAT = '%(text_field)s %(image)s'
 

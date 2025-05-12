@@ -3,27 +3,35 @@
 {% load i18n %}
 
 {% block content %}
+<div class="container my-5">
+    <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 700px;">
+        <h3 class="text-center mb-4">Resumen de tu Compra</h3>
 
-    <h3>Tu Compra</h3>
+        {% if ultima_compra %}
+            <div class="mb-3">
+                <p><strong>Fecha:</strong> {{ ultima_compra.compra_fecha }}</p>
+                <p><strong>Importe Total:</strong> {{ ultima_compra.compra_importe }} €</p>
+            </div>
 
-    {% if ultima_compra %}
-        <div>
-            <p>Fecha:{{ ultima_compra.compra_fecha }} - Importe: {{ ultima_compra.compra_importe }} €</p>
-            <ul>
+            <ul class="list-group mb-3">
                 {% for item_compra in ultima_compra.itemcompra_set.all %}
-                    <li>
-                        <span>Nombre del Producto: {{ item_compra.producto.producto_nombre }}</span><br>
-                        <span>Marca:{{ item_compra.producto.marca }}</span><br>
-                        <span>Precio: {{ item_compra.producto_precio }} €</span><br>
-                        <span>Cantidad: {{ item_compra.producto_unidades }}</span><br>
+                    <li class="list-group-item">
+                        <p class="mb-1"><strong>Producto:</strong> {{ item_compra.producto.producto_nombre }}</p>
+                        <p class="mb-1"><strong>Marca:</strong> {{ item_compra.producto.marca }}</p>
+                        <p class="mb-1"><strong>Precio Unitario:</strong> {{ item_compra.producto_precio }} €</p>
+                        <p class="mb-0"><strong>Cantidad:</strong> {{ item_compra.producto_unidades }}</p>
                     </li>
                 {% endfor %}
             </ul>
-            <p>Dirección de envio: {{ ultima_compra.direccion }}</p>
-        </div>
-        <a href="{% url 'welcome' %}">Volver a inicio</a>
-    {% else %}
-        <p>No hay compras realizadas.</p>
-    {% endif %}
 
+            <p class="mb-4"><strong>Dirección de envío:</strong> {{ ultima_compra.direccion }}</p>
+
+            <div class="text-center">
+                <a href="{% url 'welcome' %}" class="btn btn-outline-primary">Volver al inicio</a>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center">No hay compras realizadas.</div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

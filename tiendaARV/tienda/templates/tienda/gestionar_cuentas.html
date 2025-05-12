@@ -1,16 +1,38 @@
+{% extends 'tienda/base.html' %}
+
 {% block content %}
-  <h2>Gestionar Cuentas</h2>
+<div class="container my-5">
+    <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 600px;">
+        <h2 class="text-center mb-4">Gestionar Cuentas</h2>
 
-  <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Crear cuenta</button>
-  </form>
+        <form method="POST" class="mb-4">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">Crear cuenta</button>
+            </div>
+        </form>
 
-  <h3>Mis Cuentas</h3>
-  <ul>
-    {% for cuenta in cuentas %}
-      <li>{{ cuenta.numero_cuenta }} - {{ cuenta.tipo }} - {{ cuenta.saldo }} </li>
-    {% endfor %}
-  </ul>
+        <h4 class="mb-3">Mis Cuentas</h4>
+        {% if cuentas %}
+            <ul class="list-group">
+                {% for cuenta in cuentas %}
+                    <li class="list-group-item">
+                        <strong>{{ cuenta.numero_cuenta }}</strong> – {{ cuenta.tipo }} – {{ cuenta.saldo }} €
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">No tienes cuentas registradas.</p>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

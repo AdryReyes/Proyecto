@@ -11,12 +11,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
 </head>
-<body>
+<body class="bg-light text-dark" style="font-family: 'Roboto', sans-serif;">
 
-    <div>
-        <h1><a href="/">Tienda ARV</a></h1>
+    <div class="container py-4">
 
-        <form method="GET" action="{% url 'buscar_por_nombre' %}">
+        <h1 class="mb-4"><a class="text-decoration-none text-dark" href="/">Tienda ARV</a></h1>
+
+        <form method="GET" action="{% url 'buscar_por_nombre' %}" class="mb-4">
             <div class="mb-3">
                 <label for="q" class="form-label">Buscar por nombre de producto:</label>
                 <input type="text" id="q" name="q" class="form-control" value="{{ q }}">
@@ -24,91 +25,79 @@
             <button type="submit" class="btn btn-primary">Buscar</button>
         </form>
 
-        
         {% if request.user.is_authenticated %}
-            <div>¡Bienvenido, {{ request.user.username }}!</div>
-            <div>
+            <div class="mb-3">
+                <p class="fw-bold">¡Bienvenido, {{ request.user.username }}!</p>
+
                 {% if es_moderador and not request.user.cliente %}
-                    <div>
-                        <button type="submit"><a href="{% url 'moderarComentarios' %}">Moderar Comentarios</a></button>
-                    </div>
+                    <a href="{% url 'moderarComentarios' %}" class="btn btn-warning btn-sm me-2">Moderar Comentarios</a>
                 {% endif %}
-                <div>
-                    {% if request.user.cliente %}
-                        <button type="submit"><a href="{% url 'perfil' %}">Editar Perfil</a></button>
-                    {% endif %}
-                </div>
-                <div>
-                    <form id="logoutForm" action="{% url 'logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit">Cerrar Sesión</button>
-                    </form>
-                </div>
+
+                {% if request.user.cliente %}
+                    <a href="{% url 'perfil' %}" class="btn btn-secondary btn-sm me-2">Editar Perfil</a>
+                {% endif %}
+
+                <form id="logoutForm" action="{% url 'logout' %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Cerrar Sesión</button>
+                </form>
             </div>
         {% else %}
-            <div>
-                <div>
-                    <button type="submit">
-                        <h3><a href="{% url 'login' %}">Iniciar Sesión</a></h3>
-                    </button>
-                </div>
-                <div>
-                    <button type="submit"><h3><a href="{% url 'singin' %}">Registrarse</a></h3></button>
-                </div>
+            <div class="mb-3">
+                <a href="{% url 'login' %}" class="btn btn-success me-2">Iniciar Sesión</a>
+                <a href="{% url 'singin' %}" class="btn btn-outline-success">Registrarse</a>
             </div>
         {% endif %}
 
-    </div>
-    
-    {% if request.user.is_authenticated and request.user.cliente %}
-    <div>
-        <a href="{% url 'verCarrito' %}">Carro de compra</a>
-    </div>
-    {% endif %}
+        {% if request.user.is_authenticated and request.user.cliente %}
+            <div class="mb-3">
+                <a href="{% url 'verCarrito' %}" class="btn btn-info">Carro de compra</a>
+            </div>
+        {% endif %}
 
-    {% if request.user.is_authenticated %}
-    {% if request.user.is_staff %}
-        <ul>
-            <li><a href="{% url 'producto_admin' %}">Gestión de productos</a></li>
-            {% if request.user.cliente and request.user.cliente.vip %}
-                <li><a href="{% url 'informe_compras' %}">Tu historial de compras</a></li>
+        {% if request.user.is_authenticated %}
+            {% if request.user.is_staff %}
+                <ul class="list-group mb-3">
+                    <li class="list-group-item"><a href="{% url 'producto_admin' %}">Gestión de productos</a></li>
+                    {% if request.user.cliente and request.user.cliente.vip %}
+                        <li class="list-group-item"><a href="{% url 'informe_compras' %}">Tu historial de compras</a></li>
+                    {% endif %}
+                </ul>
+            {% else %}
+                {% if request.user.cliente %}
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item"><a href="{% url 'informe_compras' %}">Tu historial de compras</a></li>
+                        <li class="list-group-item"><a href="{% url 'wishlist' %}">Ver lista de deseos</a></li>
+                    </ul>
+                {% endif %}
             {% endif %}
-        </ul>
-    {% else %}
-        {% if request.user.cliente %}
-            <ul>
-                <li><a href="{% url 'informe_compras' %}">Tu historial de compras</a></li>
-                <li><a href="{% url 'wishlist' %}">Ver lista de deseos</a></li>
-            </ul>
         {% endif %}
-    {% endif %}
-{% endif %}
 
-<!-- Aquí empieza la sección de categorías -->
-<div>
-    <h3>Categorías</h3>
-    {% if categorias %}
-    <ul>
-        {% for categoria in categorias %}
-            <li><a href="{% url 'productos_por_categoria' categoria.nombre %}">{{ categoria.nombre }}</a></li>
-        {% empty %}
-            <li>No hay categorías disponibles</li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No hay categorías disponibles.</p>
-{% endif %}
-</div>
-
-    <div>
-        <div>
-            <div>
-                {% block content %}
-                {% endblock %}
-            </div>
+        <!-- Categorías -->
+        <div class="mb-4">
+            <h3>Categorías</h3>
+            {% if categorias %}
+                <ul class="list-group">
+                    {% for categoria in categorias %}
+                        <li class="list-group-item">
+                            <a href="{% url 'productos_por_categoria' categoria.nombre %}">{{ categoria.nombre }}</a>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">No hay categorías disponibles</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No hay categorías disponibles.</p>
+            {% endif %}
         </div>
+
+        <!-- Contenido principal -->
+        <div>
+            {% block content %}
+            {% endblock %}
+        </div>
+
     </div>
 
 </body>
-
 </html>

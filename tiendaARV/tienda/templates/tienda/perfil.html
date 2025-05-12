@@ -1,49 +1,61 @@
 {% extends 'tienda/base.html' %}
 
 {% block content %}
+<div class="container my-5">
+    <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 700px;">
+        <h2 class="text-center mb-4">Perfil de Usuario</h2>
 
-        <h2>Perfil de Usuario</h2>
-
-        <h4>Datos Personales:</h4>
-        {% if cliente.user %}
-            <p>Nombre de Usuario: {{ cliente.user }}</p>
-        {% endif %}
-        {% if cliente.nombre %}
-            <p>Nombre: {{ cliente.nombre }}</p>
-        {% endif %}
-        {% if cliente.apellidos %}
-            <p>Apellidos: {{ cliente.apellidos }}</p>
-        {% endif %}
-        {% if user.email %}
-            <p>Email: {{ cliente.email }}</p>
-        {% endif %}
-        <a href="{% url 'editar_perfil' pk=cliente.pk %}">Editar Perfil</a>
-
-
-        <h2>Direcciones:</h2>
-        <ul>
-            {% for direccion in direcciones_envio %}
-                <li>
-                    Dirección de Envío: {{ direccion.calle }}, {{ direccion.ciudad }}, {{ direccion.codigo_postal }}, {{ direccion.pais }}
-                </li>
-                <li>
-                    <a href="{% url 'editarDireccion' pk=direccion.pk %}">Editar Dirección</a>
-                    <a href="{% url 'confirmarEliminarDireccion' pk=direccion.pk %}">Eliminar Dirección</a>
-                </li>
-            {% endfor %}
-            {% for direccion in direcciones_facturacion %}
-                <li>
-                    Dirección de Facturación: {{ direccion.calle }}, {{ direccion.ciudad }}, {{ direccion.codigo_postal }}, {{ direccion.pais }}
-                </li>
-                <li>
-                    <a href="{% url 'editarDireccion' pk=direccion.pk %}">Editar Dirección</a>
-                    <a href="{% url 'confirmarEliminarDireccion' pk=direccion.pk %}">Eliminar Dirección</a>
-                </li>
-            {% endfor %}
+        <h4 class="mb-3">Datos Personales:</h4>
+        <ul class="list-group mb-3">
+            {% if cliente.user %}
+                <li class="list-group-item"><strong>Nombre de Usuario:</strong> {{ cliente.user }}</li>
+            {% endif %}
+            {% if cliente.nombre %}
+                <li class="list-group-item"><strong>Nombre:</strong> {{ cliente.nombre }}</li>
+            {% endif %}
+            {% if cliente.apellidos %}
+                <li class="list-group-item"><strong>Apellidos:</strong> {{ cliente.apellidos }}</li>
+            {% endif %}
+            {% if cliente.email %}
+                <li class="list-group-item"><strong>Email:</strong> {{ cliente.email }}</li>
+            {% endif %}
         </ul>
-        <a href="{% url 'añadirDireccion' %}">Añadir Dirección</a>
-        {% comment %} <a href="{% url 'gestionarPayPal' %}">Gestionar Cuentas de PayPal</a> {% endcomment %}
 
+        <div class="text-end mb-4">
+            <a href="{% url 'editar_perfil' pk=cliente.pk %}" class="btn btn-outline-primary btn-sm">Editar Perfil</a>
+        </div>
 
+        <h4 class="mb-3">Direcciones:</h4>
+        {% if direcciones_envio or direcciones_facturacion %}
+            <ul class="list-group mb-3">
+                {% for direccion in direcciones_envio %}
+                    <li class="list-group-item">
+                        <strong>Dirección de Envío:</strong><br>
+                        {{ direccion.calle }}, {{ direccion.ciudad }}, {{ direccion.codigo_postal }}, {{ direccion.pais }}
+                        <div class="mt-2">
+                            <a href="{% url 'editarDireccion' pk=direccion.pk %}" class="btn btn-sm btn-outline-secondary me-2">Editar</a>
+                            <a href="{% url 'confirmarEliminarDireccion' pk=direccion.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                        </div>
+                    </li>
+                {% endfor %}
+                {% for direccion in direcciones_facturacion %}
+                    <li class="list-group-item">
+                        <strong>Dirección de Facturación:</strong><br>
+                        {{ direccion.calle }}, {{ direccion.ciudad }}, {{ direccion.codigo_postal }}, {{ direccion.pais }}
+                        <div class="mt-2">
+                            <a href="{% url 'editarDireccion' pk=direccion.pk %}" class="btn btn-sm btn-outline-secondary me-2">Editar</a>
+                            <a href="{% url 'confirmarEliminarDireccion' pk=direccion.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">No tienes direcciones guardadas.</p>
+        {% endif %}
 
+        <div class="text-center">
+            <a href="{% url 'añadirDireccion' %}" class="btn btn-success">Añadir Dirección</a>
+        </div>
+    </div>
+</div>
 {% endblock %}

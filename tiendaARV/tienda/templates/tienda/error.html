@@ -1,4 +1,10 @@
+{% extends 'tienda/base.html' %}
+
 {% block content %}
-  <h1>{{ message }}</h1>
-  <a href="{% url 'inicio' %}">Volver al inicio</a>
+<div class="container my-5">
+    <div class="alert alert-danger text-center p-5 shadow-sm">
+        <h1 class="mb-3">{{ message }}</h1>
+        <a href="{% url 'inicio' %}" class="btn btn-outline-dark">Volver al inicio</a>
+    </div>
+</div>
 {% endblock %}

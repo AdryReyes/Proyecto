@@ -200,7 +200,7 @@ class SeleccionarCuentaForm(forms.Form):
 class CrearCuentaForm(forms.ModelForm):
     class Meta:
         model = CuentaPago
-        fields = ['tipo', 'numero_cuenta', 'saldo', 'nombre_cuenta']
+        fields = ['nombre_cuenta']
 
 class ResponderComentarioForm(forms.Form):
     comentario = forms.CharField(widget=forms.Textarea, label='Tu respuesta')

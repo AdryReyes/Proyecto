@@ -3,6 +3,7 @@ from . import views
 from .views import *
 from django.conf.urls.static import static
 from django.conf import settings
+from paypal.standard.ipn import urls as paypal_urls
 
 
 urlpatterns = [
@@ -48,6 +49,9 @@ urlpatterns = [
     # path('productos/buscar/<str:categoria_nombre>/', views.BuscarPorNombreView.as_view(), name='filtro_busqueda_categoria'),
     path('productos/<str:categoria_nombre>/filtro/', ProductoFiltroPorMarca.as_view(), name='filtro_marca'),
     path('productos/<str:categoria_nombre>/precio/', ProductoFiltroPorPrecio.as_view(), name='filtro_precio'),
+    path('paypal/', include(paypal_urls)),
+    path('historial/exportar-pdf/', views.exportar_historial_pdf, name='exportar_historial_pdf'),
+
 
 
 ]

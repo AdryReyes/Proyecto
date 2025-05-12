@@ -1,46 +1,59 @@
 {% extends 'tienda/base.html' %}
 
 {% block content %}
-
-    <h1>Historial de tus compras</h1>
+<div class="container my-5">
+    <h2 class="text-center mb-4">Historial de tus Compras</h2>
 
     {% for compra, items_compra in compras_con_comentarios %}
-        <div>
-            {% for item_compra, comentarios, promedio_valoracion in items_compra %}
-            <div>
-                <h3>{{ item_compra.producto.producto_nombre }}</h3>
-                <div>Marca: {{ item_compra.producto.marca }}</div>
-                <div>Fecha: {{ compra.compra_fecha }}</div>
-                <div>Unidades: {{ item_compra.unidades }}</div>
-                <div>Importe: {{ item_compra.precio }}</div>
-                <div>Dirección: {{ compra.direccion.calle }}, {{ compra.direccion.ciudad }}, {{ compra.direccion.pais }}</div>
-                <div>Tarjeta: {{ compra.metodo_pago.tipo }} - {{ compra.metodo_pago.titular }}</div>
+        <div class="card mb-4 shadow">
+            <div class="card-body">
+                {% for item_compra, comentarios, promedio_valoracion in items_compra %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <h4>{{ item_compra.producto.producto_nombre }}</h4>
+                        <p><strong>Marca:</strong> {{ item_compra.producto.marca }}</p>
+                        <p><strong>Fecha de Compra:</strong> {{ compra.compra_fecha }}</p>
+                        <p><strong>Unidades:</strong> {{ item_compra.unidades }}</p>
+                        <p><strong>Importe:</strong> {{ item_compra.precio }} €</p>
+                        <p><strong>Dirección:</strong> {{ compra.direccion.calle }}, {{ compra.direccion.ciudad }}, {{ compra.direccion.pais }}</p>
+                        <p><strong>Método de Pago:</strong> {{ compra.metodo_pago.tipo }} - {{ compra.metodo_pago.titular }}</p>
 
-                {% if comentarios %}
-                    <a href="{% url 'editarComentario' item_compra.id %}">Editar Comentario</a>
-                    {% for comentario in comentarios %}
-                        <a href="{% url 'eliminarComentario' comentario.id %}">Eliminar Comentario</a>
-                    {% endfor %}
-                {% else %}
-                    <a href="{% url 'agregarComentario' item_compra.id %}">Añadir Comentario</a>
-                {% endif %}
-            </div>
-
-            <div class="comentarios">
-                {% if comentarios %}
-                    <h4>Comentarios:</h4>
-                    <ul>
-                        {% for comentario in comentarios %}
-                            <li>{{ comentario.comentario }}</li>
-                            {% if comentario.valoracion %}
-                                <li>Valoración: {{ comentario.valoracion }}</li>
+                        <div class="mt-2">
+                            {% if comentarios %}
+                                <a href="{% url 'editarComentario' item_compra.id %}" class="btn btn-sm btn-outline-primary me-2">Editar Comentario</a>
+                                {% for comentario in comentarios %}
+                                    <a href="{% url 'eliminarComentario' comentario.id %}" class="btn btn-sm btn-outline-danger me-2">Eliminar Comentario</a>
+                                {% endfor %}
+                            {% else %}
+                                <a href="{% url 'agregarComentario' item_compra.id %}" class="btn btn-sm btn-success">Añadir Comentario</a>
                             {% endif %}
-                        {% endfor %}
-                    </ul>
-                {% endif %}
+                        </div>
+
+                        {% if comentarios %}
+                            <div class="mt-3">
+                                <h5>Comentarios:</h5>
+                                <ul class="list-group">
+                                    {% for comentario in comentarios %}
+                                        <li class="list-group-item">
+                                            {{ comentario.comentario }}
+                                            {% if comentario.valoracion %}
+                                                <br><strong>Valoración:</strong> {{ comentario.valoracion }}/5
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+        </div>
+    {% empty %}
+        <div class="alert alert-info text-center">
+            Aún no has realizado ninguna compra.
         </div>
     {% endfor %}
+</div>
+
+<a href="{% url 'exportar_historial_pdf' %}" class="btn btn-outline-dark mb-4">Descargar Historial en PDF</a>
 
 {% endblock %}

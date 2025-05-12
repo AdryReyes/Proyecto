@@ -92,7 +92,7 @@ class Compra(models.Model):
     compra_iva = models.DecimalField(max_digits=12, decimal_places=2, default=0.21)
     usuario = models.ForeignKey(Cliente, on_delete=models.PROTECT)
     direccion = models.ForeignKey(Direccion, on_delete=models.SET_NULL, blank=False, null=True, related_name='direccion')
-    metodo_pago = models.CharField(max_length=20, choices=[('visa', 'Visa'), ('mastercard', 'Mastercard')], default='visa')  # Actualizado para otros métodos de pago
+    metodo_pago = models.CharField(max_length=20, default='paypal', editable=False)
     transaccion_id = models.CharField(max_length=255, blank=True, null=True)  # Para almacenar el ID de la transacción
     popularidad = models.IntegerField(default=0)
 
@@ -157,13 +157,11 @@ class Wishlist(models.Model):
 
 class CuentaPago(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='cuentas')
-    tipo = models.CharField(max_length=50, choices=[('visa', 'Visa'), ('mastercard', 'Mastercard')])
-    numero_cuenta = models.CharField(max_length=16, unique=True)
-    saldo = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    nombre_cuenta = models.CharField(max_length=100, blank=True, null=True)  # Opcional
+    email_paypal = models.EmailField(unique=True)
+    nombre_cuenta = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.tipo.capitalize()} - {self.saldo} €"  # Devuelve el tipo de tarjeta y saldo
+        return f"PayPal - {self.email_paypal}"
 
 
 

@@ -1,13 +1,21 @@
 {% extends 'tienda/base.html' %}
 
 {% block content %}
-<h2>Eliminar Comentario</h2>
-<p>¿Estás seguro de que deseas eliminar este comentario?</p>
-<p>{{ object.comentario }}</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Eliminar</button>
-    <a href="{% url 'producto_lista' object.producto_compra.producto.pk %}" class="btn btn-secondary">Cancelar</a>
+<div class="container my-5">
+    <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 600px;">
+        <h2 class="text-center text-danger mb-4">Eliminar Comentario</h2>
 
-</form>
+        <p class="text-center mb-3">¿Estás seguro de que deseas eliminar este comentario?</p>
+
+        <blockquote class="blockquote text-center text-muted">
+            <p class="mb-0">"{{ object.comentario }}"</p>
+        </blockquote>
+
+        <form method="post" class="d-flex justify-content-center gap-3 mt-4">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger px-4">Eliminar</button>
+            <a href="{% url 'producto_lista' object.producto_compra.producto.pk %}" class="btn btn-outline-secondary px-4">Cancelar</a>
+        </form>
+    </div>
+</div>
 {% endblock %}

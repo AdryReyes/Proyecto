@@ -4,14 +4,7 @@
 <div class="container my-5">
     <h1 class="text-center">Búsqueda de productos</h1>
 
-    <!-- Formulario de búsqueda -->
-    <form method="GET" action="{% url 'buscar_por_nombre' %}">
-        <div class="mb-3">
-            <label for="q" class="form-label">Buscar por nombre de producto:</label>
-            <input type="text" id="q" name="q" class="form-control" value="{{ q }}">
-        </div>
-        <button type="submit" class="btn btn-primary">Buscar</button>
-    </form>
+
 
     {% if productos %}
     <h3 class="mt-4">Resultados de búsqueda:</h3>
