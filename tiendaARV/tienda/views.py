@@ -468,22 +468,46 @@ class carrito(TemplateView):
         context = super().get_context_data(**kwargs)
         carrito = self.request.session.get('carrito', {})
         productos_carrito = []
-        total_carrito = 0
+        total_precio = Decimal('0.00')
 
-        # Calculamos el precio total
-        for producto_id, producto_info in carrito.items():
+        for producto_id, info_producto in carrito.items():
             producto = Producto.objects.get(id=producto_id)
-            subtotal_producto = producto_info['precio'] * producto_info['cantidad']
-            total_carrito += subtotal_producto
+            cantidad = info_producto['cantidad']
+            subtotal = producto.precio_con_descuento * cantidad
+            total_precio += subtotal
+
             productos_carrito.append({
                 'producto': producto,
-                'cantidad': producto_info['cantidad'],
-                'subtotal': subtotal_producto
+                'cantidad': cantidad,
+                'subtotal': subtotal
             })
 
+        #  Generar invoice único
+        invoice = str(uuid.uuid4())
+
+        #  Guardar en caché la compra
+        cliente = self.request.user.cliente
+        direcciones = cliente.direccion_set.all()
+        direccion = direcciones.first() if direcciones.exists() else None
+
+        cache.set(f"paypal_cart_{invoice}", {
+            'usuario_id': cliente.cliente_id,
+            'direccion_id': direccion.id if direccion else None,
+            'importe': float(total_precio),
+            'productos': [
+                {
+                    'producto_id': p['producto'].id,
+                    'unidades': p['cantidad'],
+                    'precio': float(p['producto'].producto_precio)
+                } for p in productos_carrito
+            ]
+        }, timeout=3600)
+
+        # ✅ Enviar variables al template
         context['productos_carrito'] = productos_carrito
-        context['total_carrito'] = total_carrito
-        context['total_precio'] = total_carrito
+        context['total_precio'] = total_precio
+        context['invoice'] = invoice
+
         return context
 
 
@@ -1089,168 +1113,167 @@ class ProductoFiltroPorPrecio(ListView):
     
 
 
-def procesar_pago_paypal(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
+# def procesar_pago_paypal(request):
+#     if not request.user.is_authenticated:
+#         return redirect('login')
 
-    try:
-        cliente = Cliente.objects.get(usuario=request.user)
-    except Cliente.DoesNotExist:
-        return redirect('perfil')  # O algún mensaje de error
+#     try:
+#         cliente = Cliente.objects.get(usuario=request.user)
+#     except Cliente.DoesNotExist:
+#         return redirect('perfil')  # O algún mensaje de error
 
-    # Supongamos que tienes una función que extrae los productos del carrito (de sesión)
-    carrito = request.session.get('carrito', {})
+#     # Supongamos que tienes una función que extrae los productos del carrito (de sesión)
+#     carrito = request.session.get('carrito', {})
 
-    if not carrito:
-        return redirect('carrito')  # Carrito vacío
+#     if not carrito:
+#         return redirect('carrito')  # Carrito vacío
 
-    productos = []
-    total = Decimal('0.00')
+#     productos = []
+#     total = Decimal('0.00')
 
-    for producto_id, cantidad in carrito.items():
-        try:
-            producto = Producto.objects.get(pk=producto_id)
-            precio_final = producto.precio_con_descuento
-            productos.append({
-                'producto_id': producto.id,
-                'unidades': cantidad,
-                'precio': float(precio_final)
-            })
-            total += precio_final * cantidad
-        except Producto.DoesNotExist:
-            continue
+#     for producto_id, cantidad in carrito.items():
+#         try:
+#             producto = Producto.objects.get(pk=producto_id)
+#             precio_final = producto.precio_con_descuento
+#             productos.append({
+#                 'producto_id': producto.id,
+#                 'unidades': cantidad,
+#                 'precio': float(precio_final)
+#             })
+#             total += precio_final * cantidad
+#         except Producto.DoesNotExist:
+#             continue
 
-    # Obtener la dirección por defecto o permitir seleccionar
-    direccion_id = request.session.get("direccion_id")
-    try:
-        direccion = Direccion.objects.get(pk=direccion_id)
-    except Direccion.DoesNotExist:
-        return redirect('seleccionar_direccion')
+#     # Obtener la dirección por defecto o permitir seleccionar
+#     direccion_id = request.session.get("direccion_id")
+#     try:
+#         direccion = Direccion.objects.get(pk=direccion_id)
+#     except Direccion.DoesNotExist:
+#         return redirect('seleccionar_direccion')
 
-    # Crear invoice único
-    invoice_id = str(uuid.uuid4())
+#     # Crear invoice único
+#     invoice_id = str(uuid.uuid4())
 
-    # Guardar en caché por 1 hora
-    cache.set(f"paypal_cart_{invoice_id}", {
-        'usuario_id': cliente.id,
-        'productos': productos,
-        'direccion_id': direccion.id,
-        'importe': float(total),
-    }, timeout=3600)
+#     # Guardar en caché por 1 hora
+#     cache.set(f"paypal_cart_{invoice_id}", {
+#         'usuario_id': cliente.id,
+#         'productos': productos,
+#         'direccion_id': direccion.id,
+#         'importe': float(total),
+#     }, timeout=3600)
 
-    # Configurar formulario de PayPal
-    paypal_dict = {
-        "business": settings.PAYPAL_RECEIVER_EMAIL,
-        "amount": f"{total:.2f}",
-        "item_name": "Compra en Tienda ARV",
-        "invoice": invoice_id,
-        "currency_code": "EUR",
-        "notify_url": request.build_absolute_uri(reverse("paypal-ipn")),
-        "return": request.build_absolute_uri(reverse("pago_exitoso")),
-        "cancel_return": request.build_absolute_uri(reverse("pago_cancelado")),
-    }
+#     # Configurar formulario de PayPal
+#     paypal_dict = {
+#         "business": settings.PAYPAL_RECEIVER_EMAIL,
+#         "amount": f"{total:.2f}",
+#         "item_name": "Compra en Tienda ARV",
+#         "invoice": invoice_id,
+#         "currency_code": "EUR",
+#         "notify_url": request.build_absolute_uri(reverse("paypal-ipn")),
+#         "return": request.build_absolute_uri(reverse("pago_exitoso")),
+#         "cancel_return": request.build_absolute_uri(reverse("pago_cancelado")),
+#     }
 
-    form = PayPalPaymentsForm(initial=paypal_dict)
-    context = {"form": form}
-    return render(request, "tienda/pago_paypal.html", context)
+#     form = PayPalPaymentsForm(initial=paypal_dict)
+#     context = {"form": form}
+#     return render(request, "tienda/pago_paypal.html", context)
 
 
-def procesar_pago_paypal(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
+# def procesar_pago_paypal(request):
+#     if not request.user.is_authenticated:
+#         return redirect('login')
 
-    try:
-        cliente = Cliente.objects.get(usuario=request.user)
-    except Cliente.DoesNotExist:
-        return redirect('perfil')  # O algún mensaje de error
+#     try:
+#         cliente = Cliente.objects.get(usuario=request.user)
+#     except Cliente.DoesNotExist:
+#         return redirect('perfil')  # O algún mensaje de error
 
-    # Supongamos que tienes una función que extrae los productos del carrito (de sesión)
-    carrito = request.session.get('carrito', {})
+#     # Supongamos que tienes una función que extrae los productos del carrito (de sesión)
+#     carrito = request.session.get('carrito', {})
 
-    if not carrito:
-        return redirect('carrito')  # Carrito vacío
+#     if not carrito:
+#         return redirect('carrito')  # Carrito vacío
 
-    productos = []
-    total = Decimal('0.00')
+#     productos = []
+#     total = Decimal('0.00')
 
-    for producto_id, cantidad in carrito.items():
-        try:
-            producto = Producto.objects.get(pk=producto_id)
-            precio_final = producto.precio_con_descuento
-            productos.append({
-                'producto_id': producto.id,
-                'unidades': cantidad,
-                'precio': float(precio_final)
-            })
-            total += precio_final * cantidad
-        except Producto.DoesNotExist:
-            continue
+#     for producto_id, cantidad in carrito.items():
+#         try:
+#             producto = Producto.objects.get(pk=producto_id)
+#             precio_final = producto.precio_con_descuento
+#             productos.append({
+#                 'producto_id': producto.id,
+#                 'unidades': cantidad,
+#                 'precio': float(precio_final)
+#             })
+#             total += precio_final * cantidad
+#         except Producto.DoesNotExist:
+#             continue
 
-    # Obtener la dirección por defecto o permitir seleccionar
-    direccion_id = request.session.get("direccion_id")
-    try:
-        direccion = Direccion.objects.get(pk=direccion_id)
-    except Direccion.DoesNotExist:
-        return redirect('seleccionar_direccion')
+#     # Obtener la dirección por defecto o permitir seleccionar
+#     direccion_id = request.session.get("direccion_id")
+#     try:
+#         direccion = Direccion.objects.get(pk=direccion_id)
+#     except Direccion.DoesNotExist:
+#         return redirect('seleccionar_direccion')
 
-    # Crear invoice único
-    invoice_id = str(uuid.uuid4())
+#     # Crear invoice único
+#     invoice_id = str(uuid.uuid4())
 
-    # Guardar en caché por 1 hora
-    cache.set(f"paypal_cart_{invoice_id}", {
-        'usuario_id': cliente.id,
-        'productos': productos,
-        'direccion_id': direccion.id,
-        'importe': float(total),
-    }, timeout=3600)
+#     # Guardar en caché por 1 hora
+#     cache.set(f"paypal_cart_{invoice_id}", {
+#         'usuario_id': cliente.id,
+#         'productos': productos,
+#         'direccion_id': direccion.id,
+#         'importe': float(total),
+#     }, timeout=3600)
 
-    # Configurar formulario de PayPal
-    paypal_dict = {
-        "business": settings.PAYPAL_RECEIVER_EMAIL,
-        "amount": f"{total:.2f}",
-        "item_name": "Compra en Tienda ARV",
-        "invoice": invoice_id,
-        "currency_code": "EUR",
-        "notify_url": request.build_absolute_uri(reverse("paypal-ipn")),
-        "return": request.build_absolute_uri(reverse("pago_exitoso")),
-        "cancel_return": request.build_absolute_uri(reverse("pago_cancelado")),
-    }
+#     # Configurar formulario de PayPal
+#     paypal_dict = {
+#         "business": settings.PAYPAL_RECEIVER_EMAIL,
+#         "amount": f"{total:.2f}",
+#         "item_name": "Compra en Tienda ARV",
+#         "invoice": invoice_id,
+#         "currency_code": "EUR",
+#         "notify_url": request.build_absolute_uri(reverse("paypal-ipn")),
+#         "return": request.build_absolute_uri(reverse("pago_exitoso")),
+#         "cancel_return": request.build_absolute_uri(reverse("pago_cancelado")),
+#     }
 
-    form = PayPalPaymentsForm(initial=paypal_dict)
-    context = {"form": form}
-    return render(request, "tienda/pago_paypal.html", context)
+#     form = PayPalPaymentsForm(initial=paypal_dict)
+#     context = {"form": form}
+#     return render(request, "tienda/pago_paypal.html", context)
 
 
 def pago_exitoso(request):
     invoice_id = request.GET.get('invoice')
 
     if not invoice_id:
-        return redirect('index')  # O página de error
+        return redirect('index')
 
     datos_cache = cache.get(f"paypal_cart_{invoice_id}")
-
     if not datos_cache:
         return render(request, 'tienda/pago_error.html', {"mensaje": "No se encontró la información del carrito."})
 
     try:
-        cliente = Cliente.objects.get(pk=datos_cache['usuario_id'])
+        cliente = Cliente.objects.get(cliente_id=datos_cache['usuario_id'])
         direccion = Direccion.objects.get(pk=datos_cache['direccion_id'])
     except (Cliente.DoesNotExist, Direccion.DoesNotExist):
         return render(request, 'tienda/pago_error.html', {"mensaje": "Usuario o dirección inválida."})
 
-    # Crear la compra
     compra = Compra.objects.create(
         usuario=cliente,
         direccion=direccion,
-        metodo_pago="PayPal",
+        metodo_pago="paypal",
         transaccion_id=invoice_id,
-        importe=datos_cache['importe'],
+        compra_importe=datos_cache['importe'],
+        compra_fecha=timezone.now()
     )
 
-    # Crear productos de la compra
     for item in datos_cache['productos']:
         try:
             producto = Producto.objects.get(pk=item['producto_id'])
+            producto.reducir_stock(item['unidades'])  # importante para el stock
             producto_compra.objects.create(
                 compra=compra,
                 producto=producto,
@@ -1260,7 +1283,6 @@ def pago_exitoso(request):
         except Producto.DoesNotExist:
             continue
 
-    # Limpiar carrito
     request.session['carrito'] = {}
     cache.delete(f"paypal_cart_{invoice_id}")
 

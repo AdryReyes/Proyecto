@@ -51,6 +51,8 @@ urlpatterns = [
     path('productos/<str:categoria_nombre>/precio/', ProductoFiltroPorPrecio.as_view(), name='filtro_precio'),
     path('paypal/', include(paypal_urls)),
     path('historial/exportar-pdf/', views.exportar_historial_pdf, name='exportar_historial_pdf'),
+    path('paypal/exito/', views.pago_exitoso, name='paypal_exito'),
+    # path('paypal/cancelado/', views.paypal_cancelado, name='paypal_cancelado'),
 
 
 

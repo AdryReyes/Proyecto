@@ -62,7 +62,8 @@
             <input type="hidden" name="item_name" value="Compra en Tienda ARV">
             <input type="hidden" name="amount" value="{{ total_precio }}">
             <input type="hidden" name="currency_code" value="EUR">
-            {% comment %} <input type="hidden" name="return" value="{% url 'paypal_exito' %}"> {% endcomment %}
+            <input type="hidden" name="invoice" value="{{ invoice }}">
+            <input type="hidden" name="return" value="{{ request.build_absolute_uri|cut:request.get_full_path }}{% url 'paypal_exito' %}?invoice={{ invoice }}">
             {% comment %} <input type="hidden" name="cancel_return" value="{% url 'paypal_cancelado' %}"> {% endcomment %}
             <input type="submit" value="Pagar con PayPal" class="btn btn-primary">
         </form>
