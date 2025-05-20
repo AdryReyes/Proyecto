@@ -48,13 +48,6 @@
 
         <hr class="my-4">
 
-        {% comment %} <form method="POST" class="mb-3">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <div class="text-end">
-                <button type="submit" class="btn btn-success">Finalizar Compra</button>
-            </div>
-        </form> {% endcomment %}
 
         <form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" class="text-end">
             <input type="hidden" name="cmd" value="_xclick">

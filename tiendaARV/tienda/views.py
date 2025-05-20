@@ -581,48 +581,55 @@ class carrito_delete(DeleteView):
 def finalizar_compra(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id)
     cliente = request.user.cliente
-
     cuentas = cliente.cuentas.all()
     direcciones = cliente.direccion_set.all()
 
+    if not direcciones.exists():
+        return render(request, 'tienda/error.html', {"mensaje": "No tienes direcciones configuradas."})
+
+    # Precio final con descuento si aplica
+    precio_final = producto.precio_con_descuento
+
+    # Generar un invoice único
+    invoice = str(uuid.uuid4())
+
+    # Guardar información en caché para recuperarla después en pago_exitoso
+    cache.set(f"paypal_cart_{invoice}", {
+        'usuario_id': cliente.cliente_id,
+        'direccion_id': direcciones.first().id,
+        'importe': float(precio_final),
+        'productos': [{
+            'producto_id': producto.id,
+            'unidades': 1,
+            'precio': float(precio_final)
+        }]
+    }, timeout=3600)
+
+    # Si se desea también permitir pago interno con tarjeta
     if request.method == 'POST':
         form = SeleccionarCuentaForm(request.POST, cliente=cliente)
         if form.is_valid():
-            cantidad_deseada = 1  # Puedes hacer que el usuario seleccione más adelante si quieres
-
             try:
-                producto.reducir_stock(cantidad_deseada)  # Reducir stock
-                # Crear la compra
+                producto.reducir_stock(1)
                 compra = Compra.objects.create(
                     usuario=cliente,
                     direccion=direcciones.first(),
                     metodo_pago=form.cleaned_data['metodo_pago'],
-                    compra_importe=producto.producto_precio,
-                    transaccion_id='',  # Se llenará después del pago real
+                    compra_importe=precio_final,
+                    transaccion_id='',
                     compra_fecha=timezone.now()
                 )
 
-                # Registrar el producto comprado
                 producto_compra.objects.create(
                     compra=compra,
                     producto=producto,
-                    unidades=cantidad_deseada,
-                    precio=producto.producto_precio
+                    unidades=1,
+                    precio=precio_final
                 )
 
                 return redirect('compra_exitosa')
-
             except ValueError as e:
-                return render(request, 'error.html', {'mensaje': str(e)})
-
-        else:
-            return render(request, 'tienda/terminar_compra.html', {
-                'producto': producto,
-                'form': form,
-                'cuentas': cuentas,
-                'direcciones': direcciones,
-                'errores': form.errors
-            })
+                return render(request, 'tienda/error.html', {'mensaje': str(e)})
 
     else:
         form = SeleccionarCuentaForm(cliente=cliente)
@@ -632,8 +639,8 @@ def finalizar_compra(request, producto_id):
         'form': form,
         'cuentas': cuentas,
         'direcciones': direcciones,
+        'invoice': invoice  # Se usa en el formulario PayPal
     })
-
 
 @login_required(login_url='/tienda/login/')
 def gestionar_cuentas(request):
@@ -788,7 +795,7 @@ class comentario_new(FormView):
         )
 
         # Redirigir al detalle del producto
-        return redirect('producto_detalle', pk=producto_compra_instance.producto.id)
+        return redirect('producto_lista', pk=producto_compra_instance.producto.id)
 
 
 

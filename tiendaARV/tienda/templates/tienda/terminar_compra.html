@@ -6,28 +6,19 @@
         <h2 class="text-center mb-4">Finalizar Compra</h2>
 
         {% if cuentas and direcciones %}
-            <form method="POST" class="mb-4">
-                {% csrf_token %}
-                {% for field in form %}
-                    <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                        {{ field }}
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                {% endfor %}
 
-                <div class="text-center">
-                    <button type="submit" class="btn btn-success w-100">Finalizar Compra</button>
-                </div>
+
+            <!-- Botón PayPal -->
+            <form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" class="text-center">
+                <input type="hidden" name="cmd" value="_xclick">
+                <input type="hidden" name="business" value="sb-dkoxp31869148@business.example.com"> <!-- tu cuenta sandbox -->
+                <input type="hidden" name="item_name" value="Compra directa en Tienda ARV">
+                <input type="hidden" name="amount" value="{{ producto.precio_con_descuento }}">
+                <input type="hidden" name="currency_code" value="EUR">
+                <input type="hidden" name="invoice" value="{{ invoice }}">
+                <input type="hidden" name="return" value="{{ request.build_absolute_uri|cut:request.get_full_path }}{% url 'paypal_exito' %}?invoice={{ invoice }}">
+                <input type="submit" value="Pagar con PayPal" class="btn btn-primary w-100">
             </form>
-
-            {% if form_paypal %}
-                <form action="{{ form_paypal.get_redirect_url }}" method="post" class="text-center">
-                    <input type="submit" value="Pagar con PayPal" class="btn btn-primary w-100">
-                </form>
-            {% endif %}
 
         {% else %}
             <div class="alert alert-danger text-center">
@@ -35,9 +26,6 @@
             </div>
         {% endif %}
 
-        <div class="text-center mt-3">
-            <a href="{% url 'gestionar_cuentas' %}" class="btn btn-outline-secondary">Añadir una nueva cuenta de pago</a>
-        </div>
     </div>
 </div>
 {% endblock %}
