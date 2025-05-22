@@ -186,7 +186,7 @@ class RecuperarContrasenaForm(forms.Form):
 class SeleccionarCuentaForm(forms.Form):
     cuenta = forms.ModelChoiceField(queryset=None, label="Selecciona tu cuenta de pago")
     metodo_pago = forms.ChoiceField(
-        choices=[('visa', 'Visa'), ('mastercard', 'MasterCard')],
+        # choices=[('visa', 'Visa'), ('mastercard', 'MasterCard')],
         label="Método de pago"
     )
 

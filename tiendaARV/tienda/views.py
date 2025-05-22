@@ -349,7 +349,10 @@ class informe_compra(TemplateView):
             comentarios_por_compra = []
 
             for producto in productos_compra:
-                comentarios = Comentario.objects.filter(producto_compra=producto)
+                comentarios = Comentario.objects.filter(
+                    user=self.request.user,
+                    producto_compra__producto=producto.producto
+                )
                 promedio_valoracion = comentarios.aggregate(valoracion_promedio=Avg('valoracion'))['valoracion_promedio']
                 comentarios_por_compra.append((producto, comentarios, promedio_valoracion))
 
@@ -767,35 +770,27 @@ class comentario_new(FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        pk = self.kwargs['pk']  # Obtén el pk del producto desde los kwargs
-        producto = get_object_or_404(Producto, pk=pk)
-        context['producto'] = producto  # Agrega el producto al contexto
+        ProductoCompra = get_object_or_404(producto_compra, pk=self.kwargs['pk'])  # Aquí el pk es del ProductoCompra
+        context['producto'] = ProductoCompra.producto  # Para mostrar el nombre en la plantilla si lo necesitas
         return context
 
     def form_valid(self, form):
-        # Obtener el producto
-        producto = Producto.objects.get(pk=self.kwargs['pk'])
+        ProductoCompra_instance = get_object_or_404(producto_compra, pk=self.kwargs['pk'])
 
-        # Obtener las instancias de producto_compra que coinciden con el producto y el usuario
-        producto_compra_instances = producto_compra.objects.filter(producto=producto, compra__usuario=self.request.user.cliente)
-
-        if producto_compra_instances.count() == 0:
+        # Verificación de seguridad
+        if ProductoCompra_instance.compra.usuario != self.request.user.cliente:
             return HttpResponseForbidden("No tienes permiso para comentar sobre este producto.")
-
-        # Si hay varias instancias, puedes decidir cómo manejarlas. Por ejemplo, tomar la primera:
-        producto_compra_instance = producto_compra_instances.first()
 
         # Crear el comentario
         Comentario.objects.create(
-            producto_compra=producto_compra_instance,
+            producto_compra=ProductoCompra_instance,
             user=self.request.user,
             comentario=form.cleaned_data['comentario'],
             valoracion=form.cleaned_data['valoracion'],
-            aprobado=False,  # Si deseas moderar los comentarios
+            aprobado=False,
         )
 
-        # Redirigir al detalle del producto
-        return redirect('producto_lista', pk=producto_compra_instance.producto.id)
+        return redirect('producto_lista', pk=ProductoCompra_instance.producto.id)
 
 
 
@@ -1297,7 +1292,8 @@ def pago_exitoso(request):
 
 @login_required
 def exportar_historial_pdf(request):
-    compras = Compra.objects.filter(cliente=request.user.cliente).select_related('direccion', 'metodo_pago')
+    cliente = get_object_or_404(Cliente, usuario=request.user)
+    compras = Compra.objects.filter(usuario=cliente).select_related('direccion')
     compras_con_items = []
 
     for compra in compras:
