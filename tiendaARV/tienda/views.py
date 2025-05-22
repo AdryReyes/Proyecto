@@ -102,35 +102,40 @@ class welcome(ListView, FormView):
 class producto_lista(DetailView):
     model = Producto
     template_name = 'tienda/producto_detalle.html'
+    
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        producto = self.get_object()  # Obtiene el producto actual
-        context['producto'] = producto  # Agrega el producto al contexto
+        producto = self.get_object()
+        context['producto'] = producto
 
-        # Recuperar los comentarios para el producto actual
         comentarios = Comentario.objects.filter(producto_compra__producto=producto)
-        context['comentarios'] = comentarios  # Pasa los comentarios al contexto
+        context['comentarios'] = comentarios
 
-        # Verificamos si el usuario ha comprado el producto
         cliente = None
         cliente_ha_comprado = False
+        en_wishlist = False  
+
         if self.request.user.is_authenticated:
             try:
-                cliente = self.request.user.cliente  # Accediendo al cliente asociado al usuario
-                # Verificamos si el usuario ha comprado este producto
+                cliente = self.request.user.cliente
                 producto_compras = producto_compra.objects.filter(compra__usuario=cliente, producto=producto)
-                cliente_ha_comprado = producto_compras.exists()  # Verifica si se encontró alguna compra
+                cliente_ha_comprado = producto_compras.exists()
+
+                
+                en_wishlist = Wishlist.objects.filter(cliente=cliente, producto=producto).exists()
+
             except Cliente.DoesNotExist:
-                pass  # Si no es cliente, no asignamos nada
-        
-        # Verificamos si el usuario ya ha comentado el producto
+                pass
+
         ya_comento = comentarios.filter(user=self.request.user).exists() if self.request.user.is_authenticated else False
-        
-        # Añadir al contexto
-        context['cliente_ha_comprado'] = cliente_ha_comprado  # Para mostrar el formulario si ha comprado
+
+        # Añadir todo al contexto
+        context['cliente_ha_comprado'] = cliente_ha_comprado
         context['cliente'] = cliente
-        context['ya_comento'] = ya_comento  # Añadimos si el usuario ya comentó
+        context['ya_comento'] = ya_comento
+        context['en_wishlist'] = en_wishlist
+
         return context
     
 
@@ -516,46 +521,55 @@ class carrito(TemplateView):
 
 @login_required(login_url='/tienda/login/')
 def carrito_update(request):
-    # Recuperar el carrito de la sesión
     carrito = request.session.get('carrito', {})
     if not carrito:
         messages.error(request, "Tu carrito está vacío.")
-        return redirect('welcome')
+        return redirect('verCarrito')
 
-    # Hacer una copia del carrito para evitar la modificación durante la iteración
-    carrito_copia = carrito.copy()
+    # Si se pulsó el botón de eliminar, se procesa directamente
+    if 'eliminar' in request.POST:
+        producto_id = request.POST['eliminar']
+        if producto_id in carrito:
+            producto = get_object_or_404(Producto, id=producto_id)
+            del carrito[producto_id]
+            messages.success(request, f"Se eliminó '{producto.producto_nombre}' del carrito.")
+            request.session['carrito'] = carrito
+        else:
+            messages.error(request, "El producto no estaba en el carrito.")
+        return redirect('verCarrito')
 
-    # Variable para controlar si hubo ajustes en el carrito
+    # Si no se pulsó "eliminar", se actualizan cantidades
     ajustes_realizados = False
 
-    # Iterar sobre los productos en el carrito copiado
-    for producto_id, info_producto in carrito_copia.items():
-        producto = Producto.objects.get(id=producto_id)
-        cantidad_usuario = info_producto['cantidad']
+    for key in request.POST:
+        if key.startswith("cantidad_"):
+            producto_id = key.split("_")[1]
+            try:
+                cantidad = int(request.POST[key])
+            except ValueError:
+                continue  # ignorar valores inválidos
 
-        # Comprobar si la cantidad del carrito excede el stock disponible
-        if cantidad_usuario > producto.producto_unidades:
-            # Ajustar la cantidad al máximo disponible
-            carrito[producto_id]['cantidad'] = producto.producto_unidades
-            ajustes_realizados = True
-            # Mostrar mensaje de advertencia
-            messages.warning(request, f"La cantidad del producto '{producto.producto_nombre}' ha sido ajustada a {producto.producto_unidades} debido a la disponibilidad de stock.")
-        
-        # Si la cantidad es 0, eliminar el producto del carrito
-        if carrito[producto_id]['cantidad'] == 0:
-            del carrito[producto_id]
-            ajustes_realizados = True
-            # Mostrar mensaje informando que se ha eliminado el producto
-            messages.info(request, f"El producto '{producto.producto_nombre}' ha sido eliminado del carrito porque su cantidad es 0.")
+            if producto_id in carrito:
+                producto = get_object_or_404(Producto, id=producto_id)
 
-    # Guardar los cambios en el carrito en la sesión
+                if cantidad <= 0:
+                    del carrito[producto_id]
+                    messages.info(request, f"'{producto.producto_nombre}' fue eliminado del carrito (cantidad 0).")
+                    ajustes_realizados = True
+                elif cantidad > producto.producto_unidades:
+                    carrito[producto_id]['cantidad'] = producto.producto_unidades
+                    messages.warning(request, f"La cantidad de '{producto.producto_nombre}' fue ajustada al máximo disponible ({producto.producto_unidades}).")
+                    ajustes_realizados = True
+                else:
+                    carrito[producto_id]['cantidad'] = cantidad
+
     request.session['carrito'] = carrito
 
-    # Si se realizaron ajustes, mostrar un mensaje general
     if ajustes_realizados:
-        messages.info(request, "Se ha corregido la cantidad de algunos productos al máximo disponible debido a la falta de stock.")
+        messages.info(request, "Se ajustaron algunas cantidades en el carrito.")
 
-    return redirect('verCarrito')  # Redirigir al carrito después de actualizar
+    messages.success(request, "El carrito se actualizó correctamente.")
+    return redirect('verCarrito')
 
 
 
@@ -900,46 +914,28 @@ class WishlistView(LoginRequiredMixin, ListView):
         cliente = self.request.user.cliente  
         return Wishlist.objects.filter(cliente=cliente)  
 
-class AddToWishlistView(LoginRequiredMixin, View):
+
+class ToggleWishlistView(LoginRequiredMixin, View):
     def post(self, request, producto_id):
         producto = get_object_or_404(Producto, id=producto_id)
 
-        # Verificar si el usuario está asociado a un cliente
         try:
             cliente = Cliente.objects.get(usuario=request.user)
         except Cliente.DoesNotExist:
-            messages.error(request, "Debes ser un cliente para agregar productos a tu lista de deseos.")
+            messages.error(request, "Debes ser un cliente para modificar tu lista de deseos.")
             return redirect(request.META.get('HTTP_REFERER', '/'))
 
-        # Verifica si el producto ya está en la lista de deseos
-        if Wishlist.objects.filter(cliente=cliente, producto=producto).exists():
-            return HttpResponseForbidden("Este producto ya está en tu lista de deseos.")
-
-        # Añade el producto a la lista de deseos
-        Wishlist.objects.create(cliente=cliente, producto=producto)
-
-        # Mensaje de éxito
-        messages.success(request, f"El producto '{producto.producto_nombre}' ha sido añadido a tu lista de deseos.")
-        
-        # Redirige a la página anterior
-        return redirect(request.META.get('HTTP_REFERER', 'producto_lista'))
-
-
-class RemoveFromWishlistView(LoginRequiredMixin, View):
-    def post(self, request, producto_id):
-        producto = get_object_or_404(Producto, id=producto_id)
-
-        cliente = request.user.cliente
-        
-        # Elimina el producto de la wishlist del cliente
         wishlist_item = Wishlist.objects.filter(cliente=cliente, producto=producto).first()
-        
-        if not wishlist_item:
-            return HttpResponseForbidden("Este producto no está en tu lista de deseos.")
-        
-        wishlist_item.delete()
-        
-        return redirect(request.META.get('HTTP_REFERER', 'producto_lista'))
+
+        if wishlist_item:
+            wishlist_item.delete()
+            messages.info(request, f"'{producto.producto_nombre}' se ha eliminado de tu lista de deseos.")
+        else:
+            Wishlist.objects.create(cliente=cliente, producto=producto)
+            messages.success(request, f"'{producto.producto_nombre}' se ha añadido a tu lista de deseos.")
+
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
 
 class ProductosPorCategoriaView(ListView):
     template_name = 'tienda/categoria.html'

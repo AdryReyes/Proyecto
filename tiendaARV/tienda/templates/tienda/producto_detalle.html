@@ -44,31 +44,26 @@
             
 
             <div class="d-flex align-items-center mt-3">
-                {% if wishlist.exists %}
-                    <form method="POST" action="{% url 'remove_from_wishlist' producto.pk %}" class="me-2">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-secondary">
+                <form method="POST" action="{% url 'toggle_wishlist' producto.pk %}" class="me-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary">
+                        {% if en_wishlist %}
                             <img 
                                 class="wishlist-icon" 
                                 src="{% static 'tienda/images/heart_filled.png' %}" 
                                 data-producto-id="{{ producto.id }}" 
-                                alt="Eliminar de la lista de deseos" 
+                                alt="Quitar de la wishlist" 
                                 style="width: 20px;">
-                        </button>
-                    </form>
-                {% else %}
-                    <form method="POST" action="{% url 'add_to_wishlist' producto.pk %}" class="me-2">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-secondary">
+                        {% else %}
                             <img 
                                 class="wishlist-icon" 
                                 src="{% static 'tienda/images/heart_empty.png' %}" 
                                 data-producto-id="{{ producto.id }}" 
-                                alt="Añadir a la lista de deseos" 
+                                alt="Añadir a la wishlist" 
                                 style="width: 20px;">
-                        </button>
-                    </form>
-                {% endif %}
+                        {% endif %}
+                    </button>
+                </form>
 
                 <form method="POST" action="{% url 'compra' pk=producto.pk %}">
                     {% csrf_token %}
@@ -141,4 +136,8 @@
 
 
 </div>
+
+
 {% endblock %}
+
+

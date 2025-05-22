@@ -14,7 +14,7 @@
                             <span class="text-muted">{{ item.producto.producto_precio }} €</span><br>
                             <small class="text-muted">Añadido el: {{ item.agregado_fecha|date:"d/m/Y H:i" }}</small>
                         </div>
-                        <form action="{% url 'remove_from_wishlist' item.producto.id %}" method="post" class="ms-3">
+                        <form action="{% url 'toggle_wishlist' item.producto.id %}" method="post" class="ms-3">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                         </form>
