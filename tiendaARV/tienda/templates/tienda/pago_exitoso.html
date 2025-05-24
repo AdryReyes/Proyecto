@@ -1,4 +1,18 @@
 {% extends 'tienda/base.html' %}
 
+{% block content %}
 <h2>¡Gracias por tu compra!</h2>
 <p>Tu pedido se ha realizado correctamente. Nº de pedido: {{ compra.id }}</p>
+
+<h3>Detalles del pedido</h3>
+<ul>
+  <li>Fecha: {{ compra.compra_fecha }}</li>
+  <li>Importe total: {{ compra.compra_importe }} €</li>
+  <li>Método de pago: PayPal</li>
+  <li>Dirección de envío: {{ compra.direccion.calle }}, {{ compra.direccion.ciudad }}, {{ compra.direccion.pais }}</li>
+</ul>
+
+<!-- Botón para descargar PDF -->
+{% comment %} <a href="{% url 'exportar_historial_pdf' %}" class="btn btn-outline-dark mb-4">Descargar Compra en PDF</a> {% endcomment %}
+
+{% endblock %}

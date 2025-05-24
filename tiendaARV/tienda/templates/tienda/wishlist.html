@@ -10,7 +10,11 @@
                 {% for item in wishlist_items %}
                     <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
                         <div>
-                            <strong>{{ item.producto.producto_nombre }}</strong><br>
+                            <strong>
+                                <a href="{% url 'producto_lista' item.producto.id %}" class="text-decoration-none text-dark">
+                                    {{ item.producto.producto_nombre }}
+                                </a>
+                            </strong><br>
                             <span class="text-muted">{{ item.producto.producto_precio }} €</span><br>
                             <small class="text-muted">Añadido el: {{ item.agregado_fecha|date:"d/m/Y H:i" }}</small>
                         </div>

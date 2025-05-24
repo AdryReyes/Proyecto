@@ -62,6 +62,12 @@ class Producto(models.Model):
         if self.descuento:
             return self.producto_precio * (1 - self.descuento / 100)
         return self.producto_precio
+    
+    @property
+    def precio_final(self):
+        if self.descuento:
+            return round(self.producto_precio - (self.producto_precio * self.descuento / 100), 2)
+        return self.producto_precio
 
     def reducir_stock(self, cantidad):
         """Método para reducir el stock al comprar un producto"""
@@ -70,6 +76,7 @@ class Producto(models.Model):
             self.save()
         else:
             raise ValueError(f"No hay suficiente stock para {self.producto_nombre}")
+    
 
 class Direccion(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)

@@ -35,9 +35,13 @@
                             <td>{{ producto.producto.producto_precio }} €</td>
                             <td>{{ producto.subtotal }} €</td>
                             <td>
-                                <button type="submit" name="eliminar" value="{{ producto.producto.id }}" class="btn btn-sm btn-danger">
-                                    <i class="bi bi-trash"></i> Eliminar
-                                </button>
+                                <form method="POST" action="{% url 'eliminarProductoCarrito' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="producto_id" value="{{ producto.producto.id }}">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     {% endfor %}
