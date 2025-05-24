@@ -37,7 +37,7 @@
                 </div>
             </div>
 
-            <!-- Filtro por rebajados -->
+            <!-- Rebajados -->
             <div class="col-md-4">
                 <h5 class="mb-3">Otros filtros</h5>
                 <div class="form-check mt-2">
@@ -63,7 +63,11 @@
     {% if productos %}
         <div class="d-flex overflow-auto gap-3 pb-2">
             {% for producto in productos %}
-                <div class="card shadow-sm border-0" style="min-width: 250px; max-width: 250px;">
+                <div 
+                    class="card border-0 shadow-sm" 
+                    style="min-width: 250px; max-width: 250px; cursor: pointer;" 
+                    onclick="window.location.href='{% url 'producto_lista' producto.id %}'"
+                >
                     {% if producto.producto_imagen %}
                         <img src="{{ producto.producto_imagen.url }}" class="card-img-top" alt="{{ producto.producto_nombre }}" style="height: 180px; object-fit: cover;">
                     {% else %}
@@ -71,9 +75,10 @@
                             <p class="text-muted">Sin imagen</p>
                         </div>
                     {% endif %}
-                    <div class="card-body">
+                    <div class="card-body py-2 px-3">
                         <h6 class="fw-bold mb-1">{{ producto.producto_nombre }}</h6>
                         <p class="text-muted small mb-1">{{ producto.marca }}</p>
+
                         {% if producto.descuento %}
                             <p class="mb-2">
                                 <small class="text-danger"><del>{{ producto.producto_precio }}€</del></small><br>
@@ -82,7 +87,12 @@
                         {% else %}
                             <p class="text-success fw-bold mb-2">{{ producto.producto_precio }}€</p>
                         {% endif %}
-                        <a href="{% url 'producto_lista' producto.id %}" class="btn btn-outline-dark btn-sm w-100">Ver más</a>
+
+                        {% if producto.producto_unidades == 0 %}
+                            <span class="badge bg-danger">Sin stock</span>
+                        {% elif producto.producto_unidades <= 3 %}
+                            <span class="badge bg-warning text-dark">Últimas unidades</span>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}

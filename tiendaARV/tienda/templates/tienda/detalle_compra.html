@@ -51,9 +51,13 @@
                 </div>
 
                 <div class="col-auto ms-4">
-                    <a href="{% url 'producto_lista' item_compra.producto.id %}">
+                    {% if item_compra.producto.producto_imagen %}
                         <img src="{{ item_compra.producto.producto_imagen.url }}" alt="{{ item_compra.producto.producto_nombre }}" class="img-fluid" style="max-width: 150px; height: auto; object-fit: contain;">
-                    </a>
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center bg-light text-muted" style="width: 150px; height: 150px;">
+                            Sin imagen
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         {% endfor %}

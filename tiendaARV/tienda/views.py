@@ -131,6 +131,7 @@ class producto_lista(DetailView):
         ya_comento = comentarios.filter(user=self.request.user).exists() if self.request.user.is_authenticated else False
 
         # Añadir todo al contexto
+        context['categorias'] = Categoria.objects.all()
         context['cliente_ha_comprado'] = cliente_ha_comprado
         context['cliente'] = cliente
         context['ya_comento'] = ya_comento
@@ -912,7 +913,13 @@ class WishlistView(LoginRequiredMixin, ListView):
     def get_queryset(self):
 
         cliente = self.request.user.cliente  
-        return Wishlist.objects.filter(cliente=cliente)  
+        return Wishlist.objects.filter(cliente=cliente)
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        context['categorias'] = Categoria.objects.all()  
+        return context  
 
 
 class ToggleWishlistView(LoginRequiredMixin, View):

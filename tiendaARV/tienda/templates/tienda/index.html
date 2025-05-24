@@ -12,9 +12,9 @@
         <h2>Más vendidos</h2>
         <div class="d-flex overflow-auto gap-3">
             {% for producto in productos_mas_vendidos %}
-            <div class="card shadow-sm border-0" 
-                onclick="window.location.href='{% url 'producto_lista' producto.pk %}'" 
-                style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
+            <div class="card shadow-sm border-0"
+                 onclick="window.location.href='{% url 'producto_lista' producto.pk %}'"
+                 style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
                 {% if producto.producto_imagen %}
                 <img src="{{ producto.producto_imagen.url }}" class="card-img-top img-fluid" alt="{{ producto.producto_nombre }}" style="height: 200px; object-fit: cover;">
                 {% else %}
@@ -25,6 +25,13 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ producto.producto_nombre }}</h5>
                     <p class="card-text text-secondary">{{ producto.marca }}</p>
+                    
+                    {% if producto.producto_unidades == 0 %}
+                        <span class="badge bg-danger">Sin stock</span>
+                    {% elif producto.producto_unidades <= 3 %}
+                        <span class="badge bg-warning text-dark">Últimas unidades</span>
+                    {% endif %}
+
                     {% if producto.descuento %}
                     <p class="text-danger mb-0">
                         <small><del>{{ producto.producto_precio }}€</del></small> 
@@ -35,7 +42,6 @@
                     {% endif %}
                 </div>
             </div>
-
             {% endfor %}
         </div>
     </div>
@@ -45,9 +51,9 @@
         <h2>Productos recientes</h2>
         <div class="d-flex overflow-auto gap-3">
             {% for producto in productos_recientes %}
-            <div class="card shadow-sm border-0" 
-                onclick="window.location.href='{% url 'producto_lista' producto.pk %}'" 
-                style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
+            <div class="card shadow-sm border-0"
+                 onclick="window.location.href='{% url 'producto_lista' producto.pk %}'"
+                 style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
                 {% if producto.producto_imagen %}
                 <img src="{{ producto.producto_imagen.url }}" class="card-img-top img-fluid" alt="{{ producto.producto_nombre }}" style="height: 200px; object-fit: cover;">
                 {% else %}
@@ -58,6 +64,13 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ producto.producto_nombre }}</h5>
                     <p class="card-text text-secondary">{{ producto.marca }}</p>
+
+                    {% if producto.producto_unidades == 0 %}
+                        <span class="badge bg-danger">Sin stock</span>
+                    {% elif producto.producto_unidades <= 3 %}
+                        <span class="badge bg-warning text-dark">Últimas unidades</span>
+                    {% endif %}
+
                     {% if producto.descuento %}
                     <p class="text-danger mb-0">
                         <small><del>{{ producto.producto_precio }}€</del></small> 
@@ -77,9 +90,9 @@
         <h2>Recomendaciones</h2>
         <div class="d-flex overflow-auto gap-3">
             {% for producto in productos_recomendados %}
-            <div class="card shadow-sm border-0" 
-                onclick="window.location.href='{% url 'producto_lista' producto.pk %}'" 
-                style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
+            <div class="card shadow-sm border-0"
+                 onclick="window.location.href='{% url 'producto_lista' producto.pk %}'"
+                 style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
                 {% if producto.producto_imagen %}
                 <img src="{{ producto.producto_imagen.url }}" class="card-img-top img-fluid" alt="{{ producto.producto_nombre }}" style="height: 200px; object-fit: cover;">
                 {% else %}
@@ -90,6 +103,13 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ producto.producto_nombre }}</h5>
                     <p class="card-text text-secondary">{{ producto.marca }}</p>
+
+                    {% if producto.producto_unidades == 0 %}
+                        <span class="badge bg-danger">Sin stock</span>
+                    {% elif producto.producto_unidades <= 3 %}
+                        <span class="badge bg-warning text-dark">Últimas unidades</span>
+                    {% endif %}
+
                     {% if producto.descuento %}
                     <p class="text-danger mb-0">
                         <small><del>{{ producto.producto_precio }}€</del></small> 
