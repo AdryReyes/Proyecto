@@ -9,87 +9,88 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
 </head>
-<body class="bg-light text-dark" style="font-family: 'Roboto', sans-serif;">
+{% comment %} <body class="bg-light text-dark" style="font-family: 'Roboto', sans-serif;"> {% endcomment %}
+<body class="bg-dark text-light" style="font-family: 'Roboto', sans-serif;">
+<nav class="navbar navbar-expand-lg" style="background-color: #b22d2d;">
+  <div class="container-fluid">
 
-    <div class="container py-4">
+    <!-- Logo como imagen más grande -->
+    <a class="navbar-brand fw-bold fs-3 text-black" href="/">
+        ARVShop
+    </a>
 
-        <h1 class="mb-4"><a class="text-decoration-none text-dark" href="/">Tienda ARV</a></h1>
-
-        <form method="GET" action="{% url 'buscar_por_nombre' %}" class="mb-4">
-            <div class="mb-3">
-                <label for="q" class="form-label">Buscar por nombre de producto:</label>
-                <input type="text" id="q" name="q" class="form-control" value="{{ q }}">
-            </div>
-            <button type="submit" class="btn btn-primary">Buscar</button>
-        </form>
-
-        {% if request.user.is_authenticated %}
-            <div class="mb-3">
-                <p class="fw-bold">¡Bienvenido, {{ request.user.username }}!</p>
-
-                {% if es_moderador and not request.user.cliente %}
-                    <a href="{% url 'moderarComentarios' %}" class="btn btn-warning btn-sm me-2">Moderar Comentarios</a>
-                {% endif %}
-
-                {% if request.user.cliente %}
-                    <a href="{% url 'perfil' %}" class="btn btn-secondary btn-sm me-2">Editar Perfil</a>
-                {% endif %}
-
-                <form id="logoutForm" action="{% url 'logout' %}" method="post" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-sm">Cerrar Sesión</button>
-                </form>
-            </div>
+    <!-- Botón de Categorías con Dropdown -->
+    <div class="dropdown me-3">
+      <button class="btn btn-outline-light dropdown-toggle custom-btn" type="button" id="dropdownCategorias" data-bs-toggle="dropdown" aria-expanded="false">
+        Categorías
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="dropdownCategorias">
+        {% if categorias %}
+          {% for categoria in categorias %}
+            <li>
+              <a class="dropdown-item" href="{% url 'productos_por_categoria' categoria.nombre %}">
+                {{ categoria.nombre }}
+              </a>
+            </li>
+          {% empty %}
+            <li><span class="dropdown-item text-muted">No hay categorías</span></li>
+          {% endfor %}
         {% else %}
-            <div class="mb-3">
-                <a href="{% url 'login' %}" class="btn btn-success me-2">Iniciar Sesión</a>
-                <a href="{% url 'singin' %}" class="btn btn-outline-success">Registrarse</a>
-            </div>
+          <li><span class="dropdown-item text-muted">No hay categorías</span></li>
         {% endif %}
+      </ul>
+    </div>
 
-        {% if request.user.is_authenticated and request.user.cliente %}
-            <div class="mb-3">
-                <a href="{% url 'verCarrito' %}" class="btn btn-info">Carro de compra</a>
-            </div>
-        {% endif %}
+    <!-- Buscador con lupa dentro -->
+    <form method="GET" action="{% url 'buscar_por_nombre' %}" class="d-flex mx-auto w-50">
+      <div class="search-wrapper w-100">
+        <input class="form-control" type="search" name="q" placeholder="Buscar..." aria-label="Buscar">
+        <button type="submit">🔍</button>
+      </div>
+    </form>
 
-        {% if request.user.is_authenticated %}
-            {% if request.user.is_staff %}
-                <ul class="list-group mb-3">
-                    <li class="list-group-item"><a href="{% url 'producto_admin' %}">Gestión de productos</a></li>
-                    {% if request.user.cliente and request.user.cliente.vip %}
-                        <li class="list-group-item"><a href="{% url 'informe_compras' %}">Tu historial de compras</a></li>
-                    {% endif %}
-                </ul>
-            {% else %}
-                {% if request.user.cliente %}
-                    <ul class="list-group mb-3">
-                        <li class="list-group-item"><a href="{% url 'informe_compras' %}">Tu historial de compras</a></li>
-                        <li class="list-group-item"><a href="{% url 'wishlist' %}">Ver lista de deseos</a></li>
-                    </ul>
-                {% endif %}
+    <!-- Carrito y Usuario -->
+    <div class="ms-auto d-flex align-items-center">
+      {% if request.user.is_authenticated and request.user.cliente %}
+        <a href="{% url 'verCarrito' %}" class="btn btn-outline-light me-2 custom-btn">🛒</a>
+      {% endif %}
+
+      {% if request.user.is_authenticated %}
+        <div class="dropdown">
+          <button class="btn btn-outline-light dropdown-toggle custom-btn" type="button" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+            {{ request.user.username }}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownUser">
+            {% if request.user.cliente %}
+              <li><a class="dropdown-item" href="{% url 'perfil' %}">Perfil</a></li>
+              <li><a class="dropdown-item" href="{% url 'informe_compras' %}">Pedidos</a></li>
+              <li><a class="dropdown-item" href="{% url 'wishlist' %}">Wishlist</a></li>
             {% endif %}
-        {% endif %}
-
-        <!-- Categorías -->
-        <div class="mb-4">
-            <h3>Categorías</h3>
-            {% if categorias %}
-                <ul class="list-group">
-                    {% for categoria in categorias %}
-                        <li class="list-group-item">
-                            <a href="{% url 'productos_por_categoria' categoria.nombre %}">{{ categoria.nombre }}</a>
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item">No hay categorías disponibles</li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p class="text-muted">No hay categorías disponibles.</p>
+            {% if es_moderador and not request.user.cliente %}
+              <li><a class="dropdown-item" href="{% url 'moderarComentarios' %}">Moderar Comentarios</a></li>
             {% endif %}
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form id="logoutForm" action="{% url 'logout' %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item text-danger">Cerrar Sesión</button>
+              </form>
+            </li>
+          </ul>
         </div>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn btn-light me-2">Iniciar Sesión</a>
+        <a href="{% url 'singin' %}" class="btn btn-outline-light">Registrarse</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+
+
 
         <!-- Contenido principal -->
         <div>

@@ -12,9 +12,9 @@
         <h2>Más vendidos</h2>
         <div class="d-flex overflow-auto gap-3">
             {% for producto in productos_mas_vendidos %}
-            <div class="card shadow-sm border-0"
+            <div class="card border-0 shadow-none"
                  onclick="window.location.href='{% url 'producto_lista' producto.pk %}'"
-                 style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
+                 style="width: 18rem; flex: 0 0 auto; cursor: pointer; background-color: transparent;">
                 {% if producto.producto_imagen %}
                 <img src="{{ producto.producto_imagen.url }}" class="card-img-top img-fluid" alt="{{ producto.producto_nombre }}" style="height: 200px; object-fit: cover;">
                 {% else %}
@@ -22,10 +22,10 @@
                     <p class="text-muted">Sin imagen disponible</p>
                 </div>
                 {% endif %}
-                <div class="card-body">
+                <div class="card-body" style="background-color: transparent;">
                     <h5 class="card-title">{{ producto.producto_nombre }}</h5>
                     <p class="card-text text-secondary">{{ producto.marca }}</p>
-                    
+
                     {% if producto.producto_unidades == 0 %}
                         <span class="badge bg-danger">Sin stock</span>
                     {% elif producto.producto_unidades <= 3 %}
@@ -51,9 +51,9 @@
         <h2>Productos recientes</h2>
         <div class="d-flex overflow-auto gap-3">
             {% for producto in productos_recientes %}
-            <div class="card shadow-sm border-0"
+            <div class="card border-0 shadow-none"
                  onclick="window.location.href='{% url 'producto_lista' producto.pk %}'"
-                 style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
+                 style="width: 18rem; flex: 0 0 auto; cursor: pointer; background-color: transparent;">
                 {% if producto.producto_imagen %}
                 <img src="{{ producto.producto_imagen.url }}" class="card-img-top img-fluid" alt="{{ producto.producto_nombre }}" style="height: 200px; object-fit: cover;">
                 {% else %}
@@ -61,7 +61,7 @@
                     <p class="text-muted">Sin imagen disponible</p>
                 </div>
                 {% endif %}
-                <div class="card-body">
+                <div class="card-body" style="background-color: transparent;">
                     <h5 class="card-title">{{ producto.producto_nombre }}</h5>
                     <p class="card-text text-secondary">{{ producto.marca }}</p>
 
@@ -90,9 +90,9 @@
         <h2>Recomendaciones</h2>
         <div class="d-flex overflow-auto gap-3">
             {% for producto in productos_recomendados %}
-            <div class="card shadow-sm border-0"
+            <div class="card border-0 shadow-none"
                  onclick="window.location.href='{% url 'producto_lista' producto.pk %}'"
-                 style="width: 18rem; flex: 0 0 auto; cursor: pointer;">
+                 style="width: 18rem; flex: 0 0 auto; cursor: pointer; background-color: transparent;">
                 {% if producto.producto_imagen %}
                 <img src="{{ producto.producto_imagen.url }}" class="card-img-top img-fluid" alt="{{ producto.producto_nombre }}" style="height: 200px; object-fit: cover;">
                 {% else %}
@@ -100,7 +100,7 @@
                     <p class="text-muted">Sin imagen disponible</p>
                 </div>
                 {% endif %}
-                <div class="card-body">
+                <div class="card-body" style="background-color: transparent;">
                     <h5 class="card-title">{{ producto.producto_nombre }}</h5>
                     <p class="card-text text-secondary">{{ producto.marca }}</p>
 

@@ -1,0 +1,137 @@
+/* Logo texto ARVShop grande, negro y separado del borde */
+.navbar-brand {
+  color: black !important;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 900;          /* Más negrita */
+  font-size: 2.5rem;         /* Tamaño grande */
+  margin-left: 2.5rem;       /* Separación del borde izquierdo */
+  margin-right: 3rem;        /* Espacio a la derecha del logo */
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Alineación general de navbar items */
+.navbar-nav, .dropdown, .search-wrapper, .ms-auto.d-flex.align-items-center {
+  display: flex;
+  align-items: center;
+}
+
+/* Formulario de búsqueda centrado verticalmente */
+form.d-flex.mx-auto.w-50 {
+  height: 50px;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Input de búsqueda estilizado */
+.search-wrapper input {
+  height: 40px;
+  font-size: 1rem;
+  padding-right: 2.5rem;
+  border-radius: 6px;
+}
+
+/* Botón lupa dentro del buscador */
+.search-wrapper button {
+  font-size: 1.4rem;
+  color: #333;  /* Gris oscuro para contraste */
+  cursor: pointer;
+}
+
+/* Espacio aumentado después del botón Categorías */
+.dropdown.me-3 {
+  margin-right: 3rem;
+}
+
+/* Contenedor de carrito y perfil a la derecha, con espacios amplios */
+.ms-auto.d-flex.align-items-center {
+  gap: 2rem;           /* Espacio entre carrito y perfil */
+  margin-right: 2.5rem; /* Separación del borde derecho */
+}
+
+/* Margen extra en botón dropdown perfil (opcional) */
+.dropdown > .btn {
+  margin-right: 0.5rem;
+}
+
+/* Botones personalizados con fondo rojo dentro del marco blanco */
+.btn-outline-light.custom-btn {
+  background-color: #b22d2d; /* fondo rojo burdeos */
+  color: white !important;
+  border: 1px solid white;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Hover más oscuro */
+.btn-outline-light.custom-btn:hover {
+  background-color: #8a2222; /* rojo más oscuro */
+  color: white !important;
+  border-color: white;
+}
+
+/* Para el botón carrito que usa btn-outline-light y custom-btn */
+a.btn-outline-light.custom-btn {
+  background-color: #b22d2d;
+  color: white !important;
+  border: 1px solid white;
+  padding: 0.375rem 0.75rem;
+  font-size: 1.2rem;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+a.btn-outline-light.custom-btn:hover {
+  background-color: #8a2222;
+  color: white !important;
+  border-color: white;
+}
+
+/* Botones personalizados (sin cambios) */
+.custom-btn {
+  background-color: rgba(255, 255, 255, 0.15);
+  transition: background-color 0.3s;
+}
+
+.custom-btn:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Búsqueda posicionamiento */
+.search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-wrapper input {
+  padding-right: 2.5rem;
+}
+
+.search-wrapper button {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: #333;
+  font-size: 1.4rem;
+  padding: 0;
+}
+
+.search-wrapper button:hover {
+  color: #555;
+  cursor: pointer;
+}
+
+.card.card-transparent {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.card.card-transparent .card-body {
+    background-color: transparent !important;
+}
