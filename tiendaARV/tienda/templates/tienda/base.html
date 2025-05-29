@@ -70,8 +70,13 @@
               <li><a class="dropdown-item" href="{% url 'wishlist' %}">Wishlist</a></li>
             {% endif %}
             {% if es_moderador and not request.user.cliente %}
-              <li><a class="dropdown-item" href="{% url 'moderarComentarios' %}">Moderar Comentarios</a></li>
+              <li><a class="dropdown-item" href="{% url 'producto_admin' %}">Moderar Comentarios</a></li>
             {% endif %}
+
+            {% if request.user.is_staff %}
+              <li><a class="dropdown-item" href="{% url 'producto_admin' %}">Administrar productos</a></li>
+            {% endif %}
+            
             <li><hr class="dropdown-divider"></li>
             <li>
               <form id="logoutForm" action="{% url 'logout' %}" method="post" class="d-inline">

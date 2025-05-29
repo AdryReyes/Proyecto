@@ -1,8 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView, LogoutView
-from django.db.models import Count, Sum, Avg, F, ExpressionWrapper, DecimalField, Q
+from django.db.models import Count, Sum, Avg, F, ExpressionWrapper, DecimalField, Q, ExpressionWrapper
 from django.dispatch import receiver
+from django.forms import FloatField
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
@@ -13,12 +14,12 @@ from paypal.standard.models import ST_PP_COMPLETED
 from paypal.standard.forms import PayPalPaymentsForm
 from django.template.loader import get_template
 from xhtml2pdf import pisa
-
+from django.utils.dateparse import parse_date
+from django.core.paginator import Paginator
 
 import paypalrestsdk
 from paypalrestsdk import Payment
 from requests import request
-
 
 
 from .models import *
@@ -332,6 +333,7 @@ class informe_compra(TemplateView):
     template_name = 'tienda/detalle_compra.html'
 
     def dispatch(self, request, *args, **kwargs):
+        # Eliminar compra si se ha enviado por POST
         if 'eliminar_compra_id' in request.POST:
             compra_id = request.POST['eliminar_compra_id']
             try:
@@ -340,17 +342,32 @@ class informe_compra(TemplateView):
                 messages.success(request, 'La compra ha sido eliminada correctamente.')
             except Compra.DoesNotExist:
                 messages.error(request, 'La compra que intenta eliminar no existe.')
-            return redirect(request.path)
-
+            return redirect(request.path)  # Redirigir a la misma URL
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         cliente = get_object_or_404(Cliente, usuario=self.request.user)
-        compras = Compra.objects.filter(usuario=cliente)
-        compras_con_comentarios = []
 
-        for compra in compras:
+        # Obtener fechas del formulario GET
+        fecha_inicio = self.request.GET.get('fecha_inicio')
+        fecha_fin = self.request.GET.get('fecha_fin')
+
+        # Filtrar compras por usuario y fechas
+        compras = Compra.objects.filter(usuario=cliente).order_by('-compra_fecha')
+        if fecha_inicio:
+            compras = compras.filter(compra_fecha__date__gte=parse_date(fecha_inicio))
+        if fecha_fin:
+            compras = compras.filter(compra_fecha__date__lte=parse_date(fecha_fin))
+
+        # Paginación
+        paginator = Paginator(compras, 5) 
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        # Añadir comentarios y valoraciones a cada producto por compra
+        compras_con_comentarios = []
+        for compra in page_obj:
             productos_compra = producto_compra.objects.filter(compra=compra)
             comentarios_por_compra = []
 
@@ -359,12 +376,19 @@ class informe_compra(TemplateView):
                     user=self.request.user,
                     producto_compra__producto=producto.producto
                 )
-                promedio_valoracion = comentarios.aggregate(valoracion_promedio=Avg('valoracion'))['valoracion_promedio']
+                promedio_valoracion = comentarios.aggregate(
+                    valoracion_promedio=Avg('valoracion')
+                )['valoracion_promedio']
                 comentarios_por_compra.append((producto, comentarios, promedio_valoracion))
 
             compras_con_comentarios.append((compra, comentarios_por_compra))
 
+        # Contexto final
         context['compras_con_comentarios'] = compras_con_comentarios
+        context['page_obj'] = page_obj
+        context['fecha_inicio'] = fecha_inicio
+        context['fecha_fin'] = fecha_fin
+        context['categorias'] = Categoria.objects.all()
         return context
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
@@ -785,18 +809,16 @@ class comentario_new(FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        ProductoCompra = get_object_or_404(producto_compra, pk=self.kwargs['pk'])  # Aquí el pk es del ProductoCompra
-        context['producto'] = ProductoCompra.producto  # Para mostrar el nombre en la plantilla si lo necesitas
+        ProductoCompra_instance = get_object_or_404(producto_compra, pk=self.kwargs['pk'])
+        context['producto'] = ProductoCompra_instance.producto
         return context
 
     def form_valid(self, form):
         ProductoCompra_instance = get_object_or_404(producto_compra, pk=self.kwargs['pk'])
 
-        # Verificación de seguridad
         if ProductoCompra_instance.compra.usuario != self.request.user.cliente:
-            return HttpResponseForbidden("No tienes permiso para comentar sobre este producto.")
+            return HttpResponseForbidden("No tienes permiso para comentar este producto.")
 
-        # Crear el comentario
         Comentario.objects.create(
             producto_compra=ProductoCompra_instance,
             user=self.request.user,
@@ -806,6 +828,9 @@ class comentario_new(FormView):
         )
 
         return redirect('producto_lista', pk=ProductoCompra_instance.producto.id)
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 
@@ -947,6 +972,7 @@ class ToggleWishlistView(LoginRequiredMixin, View):
 class ProductosPorCategoriaView(ListView):
     template_name = 'tienda/categoria.html'
     context_object_name = 'productos'
+    paginate_by = 15  # 🔹 Mostrar 15 productos por página
 
     def get_queryset(self):
         # Obtener categoría según el slug pasado en la URL
@@ -960,6 +986,7 @@ class ProductosPorCategoriaView(ListView):
         context['marcas'] = Producto.objects.filter(categoria=self.categoria).values('marca__marca_nombre').distinct()
         context['precio_min'] = self.request.GET.get('precio_min', '')
         context['precio_max'] = self.request.GET.get('precio_max', '')
+        context['query_params'] = self.request.GET.copy()  # 🔹 Para conservar filtros en los enlaces de paginación
         return context
 
 
@@ -997,124 +1024,59 @@ class RecuperarContrasenaView(View):
     
 class BuscarPorNombreView(ListView):
     model = Producto
-    template_name = 'tienda/busqueda.html'  # Asegúrate de que el template esté bien configurado
+    template_name = 'tienda/busqueda.html'
     context_object_name = 'productos'
+    paginate_by = 9
 
     def get_queryset(self):
         query = self.request.GET.get('q', '')
+        queryset = Producto.objects.all()
+
         if query:
-            # Filtrar productos por nombre (ignorar mayúsculas/minúsculas)
-            return Producto.objects.filter(Q(producto_nombre__icontains=query))
-        return Producto.objects.none()  # Si no hay búsqueda, no mostrar productos
+            queryset = queryset.filter(producto_nombre__icontains=query)
+
+        marcas_seleccionadas = self.request.GET.getlist('marcas')
+        if marcas_seleccionadas:
+            queryset = queryset.filter(marca__marca_nombre__in=marcas_seleccionadas)
+
+        rebajados = self.request.GET.get('rebajados')
+        if rebajados:
+            queryset = queryset.filter(descuento__gt=0)
+
+        # ✅ Anotar correctamente usando la clase, no una instancia
+        queryset = queryset.annotate(
+            precio_descuento_db=ExpressionWrapper(
+                F('producto_precio') - (F('producto_precio') * F('descuento') / 100),
+                output_field=DecimalField(max_digits=12, decimal_places=2)
+            )
+        )
+
+        precio_min = self.request.GET.get('precio_min')
+        precio_max = self.request.GET.get('precio_max')
+
+        if precio_min:
+            try:
+                queryset = queryset.filter(precio_descuento_db__gte=precio_min)
+            except ValueError:
+                pass
+
+        if precio_max:
+            try:
+                queryset = queryset.filter(precio_descuento_db__lte=precio_max)
+            except ValueError:
+                pass
+
+        return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['q'] = self.request.GET.get('q', '')  # Pasar el valor de búsqueda al template
+        context['marcas'] = Producto.objects.values('marca__marca_nombre').distinct()
+        context['q'] = self.request.GET.get('q', '')
+        context['marcas_seleccionadas'] = self.request.GET.getlist('marcas')
+        context['rebajados'] = 'rebajados' in self.request.GET
+        context['precio_min'] = self.request.GET.get('precio_min', '')
+        context['precio_max'] = self.request.GET.get('precio_max', '')
         return context
-    
-# class ProductoFiltroPorMarca(ListView):
-#     template_name = 'tienda/categoria.html'
-#     context_object_name = 'productos'
-
-#     def get_queryset(self):
-#         # Obtener categoría desde el slug de la URL
-#         self.categoria = get_object_or_404(Categoria, nombre=self.kwargs['categoria_nombre'])
-
-#         # Base de consulta para productos en la categoría
-#         productos = Producto.objects.filter(categoria=self.categoria).annotate(
-#             precio_final=ExpressionWrapper(
-#                 F('producto_precio') * (1 - (F('descuento') / 100)),
-#                 output_field=DecimalField(max_digits=12, decimal_places=2)
-#             )
-#         )
-
-#         # Filtrar por marcas seleccionadas
-#         marcas_nombres = self.request.GET.getlist('marcas')
-#         if marcas_nombres:
-#             productos = productos.filter(marca__marca_nombre__in=marcas_nombres)
-
-#         # Filtrar por rango de precio
-#         precio_min = self.request.GET.get('precio_min')
-#         precio_max = self.request.GET.get('precio_max')
-#         try:
-#             if precio_min:
-#                 productos = productos.filter(precio_final__gte=Decimal(precio_min))
-#             if precio_max:
-#                 productos = productos.filter(precio_final__lte=Decimal(precio_max))
-#         except InvalidOperation:
-#             pass  # Ignorar errores en la conversión de precios
-
-#         return productos
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context['categoria'] = self.categoria
-#         context['categorias'] = Categoria.objects.all()
-#         context['marcas'] = Producto.objects.filter(categoria=self.categoria).values('marca__marca_nombre').distinct()
-#         context['marcas_seleccionadas'] = self.request.GET.getlist('marcas')
-#         context['precio_min'] = self.request.GET.get('precio_min', '')
-#         context['precio_max'] = self.request.GET.get('precio_max', '')
-#         return context
-
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         categoria = get_object_or_404(Categoria, nombre=self.kwargs['categoria_nombre'])
-#         marcas_nombres = self.request.GET.getlist('marcas')  # Marcas seleccionadas
-#         precio_min = self.request.GET.get('precio_min')
-#         precio_max = self.request.GET.get('precio_max')
-
-#         context['categoria'] = categoria
-#         context['marcas'] = Marca.objects.all()  # Todas las marcas para el formulario
-#         context['marcas_seleccionadas'] = marcas_nombres  # Marcas seleccionadas
-#         context['precio_min'] = precio_min  # Filtro de precio mínimo
-#         context['precio_max'] = precio_max  # Filtro de precio máximo
-#         return context
-    
-# class ProductoFiltroPorPrecio(ListView):
-#     model = Producto
-#     template_name = 'tienda/categoria.html'
-#     context_object_name = 'productos'
-
-#     def get_queryset(self):
-#         categoria_nombre = self.kwargs.get('categoria_nombre')
-#         categoria = get_object_or_404(Categoria, nombre=categoria_nombre)
-
-#         # Anotar el precio final considerando el descuento
-#         productos = Producto.objects.filter(categoria=categoria).annotate(
-#             precio_final=ExpressionWrapper(
-#                 F('producto_precio') * (1 - (F('descuento') / 100)),
-#                 output_field=DecimalField(max_digits=12, decimal_places=2)
-#             )
-#         )
-
-#         # Obtener parámetros de la URL
-#         precio_min = self.request.GET.get('precio_min')
-#         precio_max = self.request.GET.get('precio_max')
-
-#         # Aplicar filtros de precio
-#         if precio_min:
-#             try:
-#                 precio_min_decimal = Decimal(precio_min)
-#                 productos = productos.filter(precio_final__gte=precio_min_decimal)
-#             except:
-#                 pass  # Si el parámetro no es válido, ignorarlo
-
-#         if precio_max:
-#             try:
-#                 precio_max_decimal = Decimal(precio_max)
-#                 productos = productos.filter(precio_final__lte=precio_max_decimal)
-#             except:
-#                 pass  # Si el parámetro no es válido, ignorarlo
-
-#         return productos
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         categoria_nombre = self.kwargs.get('categoria_nombre')  # Obtiene el nombre de la categoría desde la URL
-#         categoria = get_object_or_404(Categoria, nombre=categoria_nombre)  # Busca la categoría
-#         context['categoria'] = categoria  # Agrega la categoría al contexto
-#         return context
 
 class ProductoFiltroView(View):
     def get(self, request, categoria_nombre):
@@ -1131,29 +1093,34 @@ class ProductoFiltroView(View):
         if rebajados:
             productos = productos.filter(descuento__gt=0)
 
-        # Obtener marcas disponibles para el filtro a partir de los productos filtrados (queryset)
+        # Marcas disponibles
         marcas = Producto.objects.filter(categoria=categoria).values('marca__marca_nombre').distinct()
 
-        # Filtro por precio, que debe hacerse en Python sobre la lista final
+        # Filtro por precio
         precio_min = request.GET.get('precio_min')
         precio_max = request.GET.get('precio_max')
         if precio_min or precio_max:
             precio_min = float(precio_min) if precio_min else 0
             precio_max = float(precio_max) if precio_max else float('inf')
-
-            productos = list(productos)  # Convertir queryset a lista para poder usar la propiedad
             productos = [p for p in productos if precio_min <= p.precio_final <= precio_max]
         else:
             productos = list(productos)
 
+        # 🔹 Paginación
+        paginator = Paginator(productos, 15)  # 15 productos por página
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
         return render(request, 'tienda/categoria.html', {
             'categoria': categoria,
-            'productos': productos,
+            'productos': page_obj.object_list,
+            'page_obj': page_obj,
             'marcas': marcas,
             'marcas_seleccionadas': marcas_seleccionadas,
             'precio_min': request.GET.get('precio_min', ''),
             'precio_max': request.GET.get('precio_max', ''),
             'rebajados': rebajados,
+            'query_params': request.GET.copy(), 
         })
 
 
@@ -1204,18 +1171,39 @@ def pago_exitoso(request):
 @login_required
 def exportar_historial_pdf(request):
     cliente = get_object_or_404(Cliente, usuario=request.user)
-    compras = Compra.objects.filter(usuario=cliente).select_related('direccion')
-    compras_con_items = []
 
-    for compra in compras:
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    page_number = request.GET.get('page')
+
+    compras = Compra.objects.filter(usuario=cliente).order_by('-compra_fecha')
+
+    if fecha_inicio and fecha_inicio != "None":
+        fecha_inicio_parsed = parse_date(fecha_inicio)
+        if fecha_inicio_parsed:
+            compras = compras.filter(compra_fecha__date__gte=fecha_inicio_parsed)
+
+    if fecha_fin and fecha_fin != "None":
+        fecha_fin_parsed = parse_date(fecha_fin)
+        if fecha_fin_parsed:
+            compras = compras.filter(compra_fecha__date__lte=fecha_fin_parsed)
+
+    paginator = Paginator(compras, 10)  # 10 compras por página
+    page_obj = paginator.get_page(page_number)
+
+    compras_con_items = []
+    for compra in page_obj:
         items = producto_compra.objects.filter(compra=compra).select_related('producto')
         compras_con_items.append((compra, items))
 
     template_path = 'tienda/historial_pdf.html'
-    context = {'compras_con_items': compras_con_items, 'cliente': request.user.cliente}
+    context = {
+        'compras_con_items': compras_con_items,
+        'cliente': cliente,
+    }
 
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="historial_compras.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="historial_compras_pagina_{page_obj.number}.pdf"'
 
     template = get_template(template_path)
     html = template.render(context)

@@ -135,3 +135,33 @@ a.btn-outline-light.custom-btn:hover {
 .card.card-transparent .card-body {
     background-color: transparent !important;
 }
+
+.custom-card {
+    background-color: #b22d2d !important; /* rojo burdeos */
+    border-color: #8b2222 !important;
+}
+
+.custom-card a.product-name {
+    color: black !important;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.custom-card a.product-name:hover {
+    text-decoration: underline;
+}
+
+.custom-card .card-text-white,
+.custom-card .card-text-white p,
+.custom-card .card-text-white strong {
+    color: white !important;
+}
+
+.card.compra-card {
+    background-color: #b22d2d;
+    color: white;
+}
+
+.card.compra-card a {
+    color: black;
+}

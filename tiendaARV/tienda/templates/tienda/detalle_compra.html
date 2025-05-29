@@ -2,16 +2,34 @@
 
 {% block content %}
 <div class="container my-5">
+  
     <h2 class="text-center mb-4">Historial de tus Compras</h2>
 
+    <form method="get" class="row g-3 mb-4 bg-dark text-white p-3 rounded">
+        <div class="col-md-4">
+            <label for="fecha_inicio" class="form-label">Desde</label>
+            <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="col-md-4">
+            <label for="fecha_fin" class="form-label">Hasta</label>
+            <input type="date" class="form-control" name="fecha_fin" id="fecha_fin" value="{{ fecha_fin }}">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-success w-100">Filtrar</button>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <a href="{% url 'informe_compras' %}" class="btn btn-outline-light w-100">Quitar filtro</a>
+        </div>
+    </form>
+
     {% for compra, items_compra in compras_con_comentarios %}
-    <div class="card mb-4 shadow">
+    <div class="card mb-4 shadow" style="background-color: #b22d2d; color: white;"> 
         <div class="card-body">
         {% for item_compra, comentarios, promedio_valoracion in items_compra %}
-            <div class="border-bottom pb-3 mb-3 row align-items-center">
+            <div class="border-bottom pb-3 mb-3 row align-items-center" style="color: white;"> 
                 <div class="col">
                     <h4>
-                        <a href="{% url 'producto_lista' item_compra.producto.id %}">
+                        <a href="{% url 'producto_lista' item_compra.producto.id %}" style="color: black; font-size: 1.8rem; text-decoration: none; font-weight: bold;"> 
                             {{ item_compra.producto.producto_nombre }}
                         </a>
                     </h4>
@@ -24,12 +42,12 @@
 
                     <div class="mt-2">
                         {% if comentarios %}
-                            <a href="{% url 'editarComentario' item_compra.id %}" class="btn btn-sm btn-outline-primary me-2">Editar Comentario</a>
+                            <a href="{% url 'editarComentario' item_compra.id %}" class="btn btn-sm btn-outline-light me-2">Editar Comentario</a> <!-- MODIFICADO -->
                             {% for comentario in comentarios %}
-                                <a href="{% url 'eliminarComentario' comentario.id %}" class="btn btn-sm btn-outline-danger me-2">Eliminar Comentario</a>
+                                <a href="{% url 'eliminarComentario' comentario.id %}" class="btn btn-sm btn-outline-light me-2">Eliminar Comentario</a> <!-- MODIFICADO -->
                             {% endfor %}
                         {% else %}
-                            <a href="{% url 'agregarComentario' item_compra.id %}" class="btn btn-sm btn-success">Añadir Comentario</a>
+                            <a href="{% url 'agregarComentario' item_compra.id %}" class="btn btn-sm btn-light">Añadir Comentario</a> <!-- MODIFICADO -->
                         {% endif %}
                     </div>
 
@@ -64,14 +82,49 @@
     </div>
 </div>
 
-
     {% empty %}
         <div class="alert alert-info text-center">
             Aún no has realizado ninguna compra.
         </div>
     {% endfor %}
+
+    {% if page_obj.has_other_pages %}
+        <nav aria-label="Paginación de compras" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ compras_con_comentarios.previous_page_number }}">Anterior</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ compras_con_comentarios.next_page_number }}">Siguiente</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
 </div>
 
-<a href="{% url 'exportar_historial_pdf' %}" class="btn btn-outline-dark mb-4">Descargar Historial en PDF</a>
-
+<div class="d-flex justify-content-center mb-4">
+    <a href="{% url 'exportar_historial_pdf' %}?page={{ page_obj.number }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" class="btn btn-outline-dark"
+    style="color: white; font-weight: bold; font-size: 20px; display: block; margin: 20px 0;">
+        Descargar PDF
+    </a>
+</div>
 {% endblock %}

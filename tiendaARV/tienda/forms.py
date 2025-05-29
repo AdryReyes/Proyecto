@@ -122,18 +122,19 @@ class EditarDatosForm(forms.ModelForm):
 
 
 class ComentarioForm(forms.ModelForm):
-    VALORACIONES_CHOICES = (
-        (1, '1'),
-        (2, '2'),
-        (3, '3'),
-        (4, '4'),
-        (5, '5'),
-    )
-    valoracion = forms.ChoiceField(label='Valoración', choices=VALORACIONES_CHOICES)
-
     class Meta:
         model = Comentario
         fields = ['comentario', 'valoracion']
+        widgets = {
+            'comentario': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'valoracion': forms.Select(attrs={'class': 'form-control w-25'}, choices=[
+                (5, '★★★★★ - Excelente'),
+                (4, '★★★★☆ - Muy bueno'),
+                (3, '★★★☆☆ - Bueno'),
+                (2, '★★☆☆☆ - Regular'),
+                (1, '★☆☆☆☆ - Malo'),
+            ]),
+        }
 
 
 # class EditarTarjetaPagoForm(forms.ModelForm):
