@@ -283,7 +283,19 @@ class iniciar_sesion(LoginView):
 
 
 class cerrar_sesion(LogoutView):
-	next_page = 'welcome'
+    next_page = 'welcome'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Guardar el carrito antes de cerrar sesión
+        carrito_guardado = request.session.get('carrito', {}).copy()
+
+        # Cerrar sesión
+        response = super().dispatch(request, *args, **kwargs)
+
+        # Restaurar el carrito en la nueva sesión
+        request.session['carrito'] = carrito_guardado
+
+        return response
 
 
 class registrarse(CreateView):
@@ -536,7 +548,7 @@ class carrito(TemplateView):
             ]
         }, timeout=3600)
 
-        # ✅ Enviar variables al template
+        # Enviar variables al template
         context['productos_carrito'] = productos_carrito
         context['total_precio'] = total_precio
         context['invoice'] = invoice
@@ -1043,7 +1055,7 @@ class BuscarPorNombreView(ListView):
         if rebajados:
             queryset = queryset.filter(descuento__gt=0)
 
-        # ✅ Anotar correctamente usando la clase, no una instancia
+        
         queryset = queryset.annotate(
             precio_descuento_db=ExpressionWrapper(
                 F('producto_precio') - (F('producto_precio') * F('descuento') / 100),

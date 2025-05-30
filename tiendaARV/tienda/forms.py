@@ -75,10 +75,6 @@ class DireccionForm(forms.ModelForm):
         cleaned_data = super().clean()
         return cleaned_data
     
-# class TarjetaPagoForm(forms.ModelForm):
-#     class Meta:
-#         model = TarjetaPago
-#         fields = ['nombre', 'tipo', 'titular', 'caducidad']
 
 class EditarDatosForm(forms.ModelForm):
     nuevo_usuario = forms.CharField(
