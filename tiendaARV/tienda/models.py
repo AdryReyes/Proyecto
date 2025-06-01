@@ -47,7 +47,7 @@ class Producto(models.Model):
     producto_unidades = models.PositiveIntegerField()
     producto_precio = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(limit_value=0)])
     producto_descripcion = models.TextField()
-    producto_vip = models.BooleanField(default=False)
+    # producto_vip = models.BooleanField(default=False)
     marca = models.ForeignKey(Marca, on_delete=models.PROTECT)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     descuento = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
@@ -84,7 +84,6 @@ class Direccion(models.Model):
     ciudad = models.CharField(max_length=100)
     codigo_postal = models.CharField(max_length=10)
     pais = models.CharField(max_length=100)
-    tipo = models.CharField(max_length=20, choices=[('envio', 'Envío'), ('facturacion', 'Facturación')])
 
     def __str__(self):
         return f"Dirección de {self.tipo} de {self.cliente.usuario.username}"
@@ -131,7 +130,7 @@ class Comentario(models.Model):
     fecha = models.DateTimeField(default=timezone.now)
     moderado_por = models.ManyToManyField(User, related_name='comentarios_moderados', blank=True)
     aprobado = models.BooleanField(default=False)
-    respuesta_a = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='respuestas')
+    respuesta_a = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='respuestas')
     
     def __str__(self):
         return f'{self.user.username} - {self.producto_compra}'

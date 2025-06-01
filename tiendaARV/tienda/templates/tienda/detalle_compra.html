@@ -42,12 +42,12 @@
 
                     <div class="mt-2">
                         {% if comentarios %}
-                            <a href="{% url 'editarComentario' item_compra.id %}" class="btn btn-sm btn-outline-light me-2">Editar Comentario</a> <!-- MODIFICADO -->
                             {% for comentario in comentarios %}
-                                <a href="{% url 'eliminarComentario' comentario.id %}" class="btn btn-sm btn-outline-light me-2">Eliminar Comentario</a> <!-- MODIFICADO -->
+                                <a href="{% url 'editarComentario' comentario.id %}?next={{ request.get_full_path }}" class="btn btn-sm btn-outline-light me-2">Editar Comentario</a>
+                                <a href="{% url 'eliminarComentario' comentario.id %}?next={{ request.get_full_path }}" class="btn btn-sm btn-outline-light me-2">Eliminar Comentario</a>
                             {% endfor %}
                         {% else %}
-                            <a href="{% url 'agregarComentario' item_compra.id %}" class="btn btn-sm btn-light">Añadir Comentario</a> <!-- MODIFICADO -->
+                            <a href="{% url 'producto_lista' item_compra.producto.id %}#comentarios" class="btn btn-sm btn-light">Añadir Comentario</a> 
                         {% endif %}
                     </div>
 
@@ -93,7 +93,7 @@
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ compras_con_comentarios.previous_page_number }}">Anterior</a>
+                    <a class="page-link" href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
                 </li>
                 {% else %}
                 <li class="page-item disabled"><span class="page-link">Anterior</span></li>
@@ -111,7 +111,7 @@
 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ compras_con_comentarios.next_page_number }}">Siguiente</a>
+                    <a class="page-link" href="?{% if request.GET.fecha_inicio %}fecha_inicio={{ request.GET.fecha_inicio }}&{% endif %}{% if request.GET.fecha_fin %}fecha_fin={{ request.GET.fecha_fin }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
                 </li>
                 {% else %}
                 <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
@@ -119,6 +119,7 @@
             </ul>
         </nav>
     {% endif %}
+
 </div>
 
 <div class="d-flex justify-content-center mb-4">

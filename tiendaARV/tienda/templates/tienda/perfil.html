@@ -57,21 +57,6 @@
         </div>
       </li>
       {% endfor %}
-
-      {% for direccion in direcciones_facturacion %}
-      <li class="list-group-item mb-3 shadow-sm rounded">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <strong class="text-danger">Dirección de Facturación:</strong><br>
-            {{ direccion.calle }}, {{ direccion.ciudad }}, {{ direccion.codigo_postal }}, {{ direccion.pais }}
-          </div>
-          <div class="btn-group btn-group-sm" role="group" aria-label="Acciones dirección facturación">
-            <a href="{% url 'editarDireccion' pk=direccion.pk %}" class="btn btn-outline-success">Editar</a>
-            <a href="{% url 'confirmarEliminarDireccion' pk=direccion.pk %}" class="btn btn-outline-danger">Eliminar</a>
-          </div>
-        </div>
-      </li>
-      {% endfor %}
     </ul>
     {% else %}
     <p class="text-muted fst-italic">No tienes direcciones guardadas.</p>

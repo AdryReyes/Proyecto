@@ -3,28 +3,35 @@
 {% block content %}
 <div class="container my-5">
     <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 900px;">
-        <h2 class="text-center mb-4">Mi Lista de Deseos</h2>
+        <h2 class="text-center mb-3 text-dark fw-bold">Mi Lista de Deseos</h2>
+
+        <p class="text-center fw-bold fs-5 text-success mb-4">{{ page_obj.paginator.count }} productos en tu lista</p>
 
         {% if wishlist_items %}
-            <div class="d-flex flex-column gap-3">
+            <div class="d-flex flex-column">
                 {% for item in wishlist_items %}
-                    <div 
-                        class="card border-0 shadow-sm d-flex flex-row align-items-center position-relative"
-                        style="cursor: pointer;"
-                        onclick="window.location.href='{% url 'producto_lista' item.producto.id %}'"
-                    >
+                    <div class="d-flex flex-row align-items-center position-relative py-3">
+                        <!-- Imagen clicable -->
                         {% if item.producto.producto_imagen %}
-                            <img src="{{ item.producto.producto_imagen.url }}" alt="{{ item.producto.producto_nombre }}" 
-                                 style="width: 180px; height: 180px; object-fit: cover; flex-shrink: 0;">
+                            <a href="{% url 'producto_lista' item.producto.id %}">
+                                <img src="{{ item.producto.producto_imagen.url }}" alt="{{ item.producto.producto_nombre }}" 
+                                     style="width: 150px; height: 150px; object-fit: cover; flex-shrink: 0;">
+                            </a>
                         {% else %}
-                            <div class="d-flex align-items-center justify-content-center bg-light" style="width: 180px; height: 180px; flex-shrink: 0;">
-                                <p class="text-muted">Sin imagen</p>
+                            <div class="d-flex align-items-center justify-content-center bg-light text-dark fw-semibold" style="width: 150px; height: 150px; flex-shrink: 0;">
+                                <p class="mb-0">Sin imagen</p>
                             </div>
                         {% endif %}
-                        <div class="card-body px-3 py-2 flex-grow-1">
-                            <h5 class="fw-bold mb-1">{{ item.producto.producto_nombre }}</h5>
+
+                        <!-- Info producto -->
+                        <div class="px-3 py-2 flex-grow-1 text-dark">
+                            <h5 class="fw-bold mb-1">
+                                <a href="{% url 'producto_lista' item.producto.id %}" class="text-decoration-none text-dark">
+                                    {{ item.producto.producto_nombre }}
+                                </a>
+                            </h5>
                             <p class="text-muted small mb-2">{{ item.producto.marca }}</p>
-                            <p class="mb-2" style="max-height: 4.5em; overflow: hidden; text-overflow: ellipsis;">
+                            <p class="mb-2 text-dark" style="max-height: 4.5em; overflow: hidden; text-overflow: ellipsis;">
                                 {{ item.producto.producto_descripcion }}
                             </p>
 
@@ -36,28 +43,69 @@
                                 <span class="badge bg-warning text-dark">Últimas unidades</span>
                             {% endif %}
 
-                            <p class="text-muted small mt-2 mb-0">Añadido el: {{ item.agregado_fecha|date:"d/m/Y H:i" }}</p>
+                            <p class="text-muted small mt-2 mb-3">Añadido el: {{ item.agregado_fecha|date:"d/m/Y H:i" }}</p>
+
+                            <!-- Botón Añadir al carrito -->
+                            <form method="POST" action="{% url 'compra' pk=item.producto.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="producto_id" value="{{ item.producto.id }}">
+                                <input type="hidden" name="cantidad" value="1">
+                                <button type="submit" class="btn btn-outline-success fw-semibold px-3"
+                                    {% if item.producto.producto_unidades <= 0 %}disabled{% endif %}>
+                                    Añadir al carrito
+                                </button>
+                            </form>
                         </div>
 
                         <!-- Botón eliminar -->
                         <form action="{% url 'toggle_wishlist' item.producto.id %}" method="post" class="position-absolute top-0 end-0 m-2">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-danger btn-sm p-2" title="Eliminar" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-x-lg" style="font-size: 1.2rem;">X</i>
+                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-circle" title="Eliminar" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-x-lg" style="font-size: 1.2rem;"></i>
                             </button>
                         </form>
                     </div>
+
+                    {% if not forloop.last %}
+                        <hr class="my-3 border-dark-subtle opacity-75">
+                    {% endif %}
                 {% endfor %}
             </div>
+
+            <!-- Paginación -->
+            <nav aria-label="Paginación de wishlist" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link text-dark" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior">&laquo;</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active"><span class="page-link bg-dark border-dark">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link text-dark" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link text-dark" href="?page={{ page_obj.next_page_number }}" aria-label="Siguiente">&raquo;</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+
         {% else %}
-            <div class="alert alert-info text-center">
+            <div class="alert alert-info text-center text-dark fw-semibold">
                 No tienes productos en tu lista de deseos.
             </div>
         {% endif %}
-
-        <div class="text-center mt-4">
-            <a href="{% url 'welcome' %}" class="btn btn-outline-primary">Volver al catálogo</a>
-        </div>
     </div>
 </div>
 {% endblock %}

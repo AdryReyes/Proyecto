@@ -41,7 +41,7 @@ urlpatterns = [
     path('productos/<str:categoria_nombre>/', ProductosPorCategoriaView.as_view(), name='productos_por_categoria'),
     path('recuperar-contraseña/', RecuperarContrasenaView.as_view(), name='recuperar_contraseña'),
     path('captcha/', include('captcha.urls')),
-    path('gestionar-cuentas/', views.gestionar_cuentas, name='gestionar_cuentas'),
+    # path('gestionar-cuentas/', views.gestionar_cuentas, name='gestionar_cuentas'),
     path('compra-exitosa/', views.compra_exitosa, name='compra_exitosa'),
     path('finalizar-compra/', views.finalizar_compra_carrito, name='finalizar_compra'),
     path('responder-comentarios/<int:pk>', ResponderComentarioView.as_view(), name='responderComentario'),
@@ -52,6 +52,8 @@ urlpatterns = [
     path('paypal/', include(paypal_urls)),
     path('historial/exportar-pdf/', views.exportar_historial_pdf, name='exportar_historial_pdf'),
     path('paypal/exito/', views.pago_exitoso, name='paypal_exito'),
+    path('admin/marca/nueva/', marca_new.as_view(), name='marca_new'),
+    path('admin/categoria/nueva/', categoria_new.as_view(), name='categoria_new'),
     # path('paypal/cancelado/', views.paypal_cancelado, name='paypal_cancelado'),
 
 

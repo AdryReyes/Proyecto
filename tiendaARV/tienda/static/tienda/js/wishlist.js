@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const filledIcon = this.querySelector('img[alt="Eliminar de la lista de deseos"]');
             const emptyIcon = this.querySelector('img[alt="Añadir a la lista de deseos"]');
             
-            // Decide la URL y acción en base al estado actual
+            
             const isInWishlist = filledIcon.style.display !== 'none';
             const url = isInWishlist 
                         ? '{% url "remove_from_wishlist" 0 %}'.replace('/0/', `/${productId}/`) 
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch(url, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',  // Asegúrate de tener el token correcto
+                    'X-CSRFToken': '{{ csrf_token }}', 
                     'Content-Type': 'application/json',
                 },
             })

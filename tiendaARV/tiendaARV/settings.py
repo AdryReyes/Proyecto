@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'tienda',
     'captcha',
     'paypal.standard.ipn',
+    "widget_tweaks",
 ]
 
 PAYPAL_RECEIVER_EMAIL = 'tsb-dkoxp31869148@business.example.com'

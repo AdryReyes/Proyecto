@@ -54,7 +54,7 @@ class FilterForm(forms.Form):
 class DireccionForm(forms.ModelForm):
     class Meta:
         model = Direccion
-        fields = ['calle', 'ciudad', 'codigo_postal', 'pais', 'tipo']
+        fields = ['calle', 'ciudad', 'codigo_postal', 'pais']
         labels = {
             'calle': 'Dirección y número:',
             'ciudad': 'Ciudad:',
@@ -194,11 +194,22 @@ class SeleccionarCuentaForm(forms.Form):
 
 
 
-class CrearCuentaForm(forms.ModelForm):
-    class Meta:
-        model = CuentaPago
-        fields = ['nombre_cuenta']
+# class CrearCuentaForm(forms.ModelForm):
+#     class Meta:
+#         model = CuentaPago
+#         fields = ['nombre_cuenta']
 
-class ResponderComentarioForm(forms.Form):
-    comentario = forms.CharField(widget=forms.Textarea, label='Tu respuesta')
-    valoracion = forms.IntegerField(min_value=1, max_value=5, label='Valoración')
+class ResponderComentarioForm(forms.ModelForm):
+    class Meta:
+        model = Comentario
+        fields = ['comentario']
+
+class MarcaForm(forms.ModelForm):
+    class Meta:
+        model = Marca
+        fields = ['marca_nombre']
+
+class CategoriaForm(forms.ModelForm):
+    class Meta:
+        model = Categoria
+        fields = ['nombre']

@@ -33,7 +33,7 @@ from django.db import transaction
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView
 
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseRedirect
 
 
 
@@ -103,14 +103,18 @@ class welcome(ListView, FormView):
 class producto_lista(DetailView):
     model = Producto
     template_name = 'tienda/producto_detalle.html'
-    
+    context_object_name = 'producto'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         producto = self.get_object()
-        context['producto'] = producto
 
-        comentarios = Comentario.objects.filter(producto_compra__producto=producto)
+        comentarios = Comentario.objects.filter(
+            producto_compra__producto=producto,
+            aprobado=True,
+            respuesta_a__isnull=True
+        ).order_by('-fecha')
+
         context['comentarios'] = comentarios
 
         cliente = None
@@ -122,16 +126,12 @@ class producto_lista(DetailView):
                 cliente = self.request.user.cliente
                 producto_compras = producto_compra.objects.filter(compra__usuario=cliente, producto=producto)
                 cliente_ha_comprado = producto_compras.exists()
-
-                
                 en_wishlist = Wishlist.objects.filter(cliente=cliente, producto=producto).exists()
-
             except Cliente.DoesNotExist:
                 pass
 
         ya_comento = comentarios.filter(user=self.request.user).exists() if self.request.user.is_authenticated else False
 
-        # Añadir todo al contexto
         context['categorias'] = Categoria.objects.all()
         context['cliente_ha_comprado'] = cliente_ha_comprado
         context['cliente'] = cliente
@@ -140,12 +140,25 @@ class producto_lista(DetailView):
 
         return context
     
-
 @method_decorator(staff_member_required, name='dispatch')
 class producto_admin(ListView):
-	model = Producto
-	template_name = 'tienda/admin.html'
-	context_object_name = 'productos'
+    model = Producto
+    template_name = 'tienda/admin.html'
+    context_object_name = 'productos'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related('marca', 'categoria')
+        query = self.request.GET.get('q')
+        if query:
+            queryset = queryset.filter(producto_nombre__icontains=query)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['q'] = self.request.GET.get('q', '')  # para mantener el valor del buscador en la plantilla
+        return context
+
 
 
 @method_decorator(staff_member_required, name='dispatch')
@@ -200,6 +213,18 @@ class producto_new(CreateView):
         form.save_m2m()
 
         return redirect('producto_admin')
+    
+class marca_new(CreateView):
+    model = Marca
+    form_class = MarcaForm
+    template_name = 'tienda/marca_new.html'
+    success_url = reverse_lazy('producto_admin')
+
+class categoria_new(CreateView):
+    model = Categoria
+    form_class = CategoriaForm
+    template_name = 'tienda/categoria_new.html'
+    success_url = reverse_lazy('producto_admin')
 
 
 
@@ -472,22 +497,22 @@ class direccion_edit(UpdateView):
     template_name = 'tienda/editar_direccion.html'
     success_url = reverse_lazy('perfil')
 
+    def get_cliente(self):
+        return get_object_or_404(Cliente, usuario=self.request.user)
+
     def get_object(self, queryset=None):
-        try:
-            direccion = Direccion.objects.get(cliente__user=self.request.user, pk=self.kwargs['pk'])
-        except Direccion.DoesNotExist:
-            direccion = None
-        return direccion
+        cliente = self.get_cliente()
+        return get_object_or_404(Direccion, cliente=cliente, pk=self.kwargs['pk'])
 
     def form_valid(self, form):
-        cliente = self.request.user.cliente
-        form.instance.cliente = cliente
+        form.instance.cliente = self.get_cliente()
         return super().form_valid(form)
 
     def dispatch(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if not self.object:
-            return redirect('añadirDireccion')
+        try:
+            self.object = self.get_object()
+        except Http404:
+            return redirect('añadirDireccion')  # O muestra un mensaje
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -696,23 +721,23 @@ def finalizar_compra(request, producto_id):
         'invoice': invoice  # Se usa en el formulario PayPal
     })
 
-@login_required(login_url='/tienda/login/')
-def gestionar_cuentas(request):
-    cliente = request.user.cliente
-    if request.method == 'POST':
-        form = CrearCuentaForm(request.POST)
-        if form.is_valid():
-            cuenta = form.save(commit=False)
-            cuenta.cliente = cliente
-            cuenta.save()
-            return redirect('gestionar_cuentas')
-    else:
-        form = CrearCuentaForm()
-    cuentas = cliente.cuentas.all()
-    return render(request, 'tienda/gestionar_cuentas.html', {
-        'form': form,
-        'cuentas': cuentas,
-    })
+# @login_required(login_url='/tienda/login/')
+# def gestionar_cuentas(request):
+#     cliente = request.user.cliente
+#     if request.method == 'POST':
+#         form = CrearCuentaForm(request.POST)
+#         if form.is_valid():
+#             cuenta = form.save(commit=False)
+#             cuenta.cliente = cliente
+#             cuenta.save()
+#             return redirect('gestionar_cuentas')
+#     else:
+#         form = CrearCuentaForm()
+#     cuentas = cliente.cuentas.all()
+#     return render(request, 'tienda/gestionar_cuentas.html', {
+#         'form': form,
+#         'cuentas': cuentas,
+#     })
 
 def finalizar_compra_carrito(request):
     cliente = request.user.cliente
@@ -817,32 +842,39 @@ class checkout(DetailView):
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
 class comentario_new(FormView):
     form_class = ComentarioForm
-    template_name = 'tienda/comentario_form.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        ProductoCompra_instance = get_object_or_404(producto_compra, pk=self.kwargs['pk'])
-        context['producto'] = ProductoCompra_instance.producto
-        return context
 
     def form_valid(self, form):
-        ProductoCompra_instance = get_object_or_404(producto_compra, pk=self.kwargs['pk'])
+        producto = get_object_or_404(Producto, pk=self.kwargs['pk'])
 
-        if ProductoCompra_instance.compra.usuario != self.request.user.cliente:
-            return HttpResponseForbidden("No tienes permiso para comentar este producto.")
+        try:
+            cliente = self.request.user.cliente
+        except:
+            messages.error(self.request, "Debes tener un perfil de cliente para comentar.")
+            return redirect('producto_lista', pk=producto.pk)
+
+        producto_compra_obj = producto_compra.objects.filter(
+            compra__usuario=cliente,
+            producto=producto
+        ).first()
+
+        if not producto_compra_obj:
+            messages.error(self.request, "Debes haber comprado este producto para poder comentar.")
+            return redirect('producto_lista', pk=producto.pk)
+
+        if Comentario.objects.filter(producto_compra=producto_compra_obj, user=self.request.user).exists():
+            messages.warning(self.request, "Ya has comentado este producto.")
+            return redirect('producto_lista', pk=producto.pk)
 
         Comentario.objects.create(
-            producto_compra=ProductoCompra_instance,
+            producto_compra=producto_compra_obj,
             user=self.request.user,
             comentario=form.cleaned_data['comentario'],
             valoracion=form.cleaned_data['valoracion'],
-            aprobado=False,
+            fecha=timezone.now(),
+            aprobado=True  # Ahora aprobado directamente
         )
 
-        return redirect('producto_lista', pk=ProductoCompra_instance.producto.id)
-
-    def form_invalid(self, form):
-        return self.render_to_response(self.get_context_data(form=form))
+        return redirect('producto_lista', pk=producto.pk)
 
 
 
@@ -853,9 +885,7 @@ class comentario_edit(UpdateView):
     template_name = 'tienda/editar_comentario.html'
 
     def get_success_url(self):
-        comentario = self.get_object()
-        producto_pk = comentario.producto_compra.producto.pk  # Asegúrate que esto sea correcto
-        return reverse_lazy('producto_lista', kwargs={'pk': producto_pk})
+        return self.request.GET.get('next') or reverse_lazy('welcome')
 
     def test_func(self):
         comentario = self.get_object()
@@ -868,15 +898,12 @@ class comentario_edit(UpdateView):
         return super().form_valid(form)
 
 
-class comentario_delete(DeleteView):
+class comentario_delete(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Comentario
     template_name = 'tienda/eliminar_comentario.html'
 
     def get_success_url(self):
-        # Obtenemos el producto relacionado al comentario
-        comentario = self.get_object()
-        producto_pk = comentario.producto_compra.producto.pk  # Ajusta si el modelo tiene otro nombre
-        return reverse_lazy('producto_lista', kwargs={'pk': producto_pk})
+        return self.request.GET.get('next') or reverse_lazy('welcome')
 
     def test_func(self):
         comentario = self.get_object()
@@ -884,14 +911,19 @@ class comentario_delete(DeleteView):
 
     def delete(self, request, *args, **kwargs):
         comentario = self.get_object()
-        # Eliminar las respuestas antes de eliminar el comentario
-        comentario.comentario_set.all().delete()  # Eliminar todas las respuestas asociadas al comentario
-        return super().delete(request, *args, **kwargs)  # Luego eliminar el comentario
+        if comentario.respuesta_a is None:
+            # borrar todas las respuestas directas e indirectas (recursivamente si las hubiera)
+            def borrar_respuestas(c):
+                for r in c.respuestas.all():
+                    borrar_respuestas(r)
+                    r.delete()
+            borrar_respuestas(comentario)
+        return super().delete(request, *args, **kwargs)
 
 class ResponderComentarioView(View):
     def get(self, request, pk):
         comentario = get_object_or_404(Comentario, pk=pk)
-        form = ResponderComentarioForm()  # Creamos una instancia del formulario vacío
+        form = ResponderComentarioForm()
         return render(request, 'tienda/responder_comentario.html', {'form': form, 'comentario': comentario})
 
     def post(self, request, pk):
@@ -899,16 +931,27 @@ class ResponderComentarioView(View):
         form = ResponderComentarioForm(request.POST)
 
         if form.is_valid():
-            # Crear una nueva respuesta
+            # Comprueba si ya hay respuesta del usuario a ese comentario
+            respuesta_existente = Comentario.objects.filter(
+                respuesta_a=comentario,
+                user=request.user
+            ).exists()
+
+            if respuesta_existente:
+                messages.warning(request, "Ya has respondido a este comentario.")
+                return redirect('producto_lista', pk=comentario.producto_compra.producto.pk)
+
             Comentario.objects.create(
                 producto_compra=comentario.producto_compra,
                 user=request.user,
                 comentario=form.cleaned_data['comentario'],
-                valoracion=form.cleaned_data['valoracion'],
-                respuesta_a=comentario,  # Relacionar la respuesta con el comentario original
-                aprobado=True,  # Aprobado por defecto
+                respuesta_a=comentario,
+                aprobado=True,
+                fecha=timezone.now(),
             )
-            return redirect('producto_lista', pk=comentario.producto_compra.producto.pk)  # Redirige al detalle del producto
+            
+            return redirect('producto_lista', pk=comentario.producto_compra.producto.pk)
+
         return render(request, 'tienda/responder_comentario.html', {'form': form, 'comentario': comentario})
 
 class comentario_mod(LoginRequiredMixin, PermissionRequiredMixin, ListView):
@@ -946,17 +989,16 @@ class WishlistView(LoginRequiredMixin, ListView):
     model = Wishlist
     template_name = 'tienda/wishlist.html'
     context_object_name = 'wishlist_items'
+    paginate_by = 10
 
     def get_queryset(self):
-
-        cliente = self.request.user.cliente  
-        return Wishlist.objects.filter(cliente=cliente)
+        cliente = self.request.user.cliente
+        return Wishlist.objects.filter(cliente=cliente).order_by('-agregado_fecha')  # Más recientes primero
 
     def get_context_data(self, **kwargs):
-
         context = super().get_context_data(**kwargs)
-        context['categorias'] = Categoria.objects.all()  
-        return context  
+        context['categorias'] = Categoria.objects.all()
+        return context 
 
 
 class ToggleWishlistView(LoginRequiredMixin, View):

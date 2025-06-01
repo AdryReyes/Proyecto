@@ -12,17 +12,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
 </head>
-{% comment %} <body class="bg-light text-dark" style="font-family: 'Roboto', sans-serif;"> {% endcomment %}
 <body class="bg-dark text-light" style="font-family: 'Roboto', sans-serif;">
+
 <nav class="navbar navbar-expand-lg" style="background-color: #b22d2d;">
   <div class="container-fluid">
-
-    <!-- Logo como imagen más grande -->
+    <!-- Logo -->
     <a class="navbar-brand fw-bold fs-3 text-black" href="/">
         ARVShop
     </a>
-
-    <!-- Botón de Categorías con Dropdown -->
+    <!-- Botón Categorías -->
     <div class="dropdown me-3">
       <button class="btn btn-outline-light dropdown-toggle custom-btn" type="button" id="dropdownCategorias" data-bs-toggle="dropdown" aria-expanded="false">
         Categorías
@@ -30,11 +28,7 @@
       <ul class="dropdown-menu" aria-labelledby="dropdownCategorias">
         {% if categorias %}
           {% for categoria in categorias %}
-            <li>
-              <a class="dropdown-item" href="{% url 'productos_por_categoria' categoria.nombre %}">
-                {{ categoria.nombre }}
-              </a>
-            </li>
+            <li><a class="dropdown-item" href="{% url 'productos_por_categoria' categoria.nombre %}">{{ categoria.nombre }}</a></li>
           {% empty %}
             <li><span class="dropdown-item text-muted">No hay categorías</span></li>
           {% endfor %}
@@ -43,21 +37,18 @@
         {% endif %}
       </ul>
     </div>
-
-    <!-- Buscador con lupa dentro -->
+    <!-- Buscador -->
     <form method="GET" action="{% url 'buscar_por_nombre' %}" class="d-flex mx-auto w-50">
       <div class="search-wrapper w-100">
         <input class="form-control" type="search" name="q" placeholder="Buscar..." aria-label="Buscar">
         <button type="submit">🔍</button>
       </div>
     </form>
-
     <!-- Carrito y Usuario -->
     <div class="ms-auto d-flex align-items-center">
       {% if request.user.is_authenticated and request.user.cliente %}
         <a href="{% url 'verCarrito' %}" class="btn btn-outline-light me-2 custom-btn">🛒</a>
       {% endif %}
-
       {% if request.user.is_authenticated %}
         <div class="dropdown">
           <button class="btn btn-outline-light dropdown-toggle custom-btn" type="button" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
@@ -72,11 +63,9 @@
             {% if es_moderador and not request.user.cliente %}
               <li><a class="dropdown-item" href="{% url 'producto_admin' %}">Moderar Comentarios</a></li>
             {% endif %}
-
             {% if request.user.is_staff %}
               <li><a class="dropdown-item" href="{% url 'producto_admin' %}">Administrar productos</a></li>
             {% endif %}
-            
             <li><hr class="dropdown-divider"></li>
             <li>
               <form id="logoutForm" action="{% url 'logout' %}" method="post" class="d-inline">
@@ -94,16 +83,46 @@
   </div>
 </nav>
 
+<!-- Contenedor que envuelve todo para el footer sticky -->
+<div class="page-wrapper d-flex flex-column min-vh-100">
 
+  <!-- Contenido principal que crece -->
+  <main class="flex-grow-1">
+    {% block content %}
+    {% endblock %}
+  </main>
 
-
-        <!-- Contenido principal -->
-        <div>
-            {% block content %}
-            {% endblock %}
+  <!-- Footer -->
+  <footer class="bg-black text-light mt-5 py-4">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <h5 class="text-uppercase">ARVShop</h5>
+          <p class="small">Tu tienda de confianza.</p>
         </div>
-
+        <div class="col-md-4 mb-3">
+          <h6 class="text-uppercase">Enlaces</h6>
+          <ul class="list-unstyled">
+            <li><a href="/" class="text-light text-decoration-none">Inicio</a></li>
+            <li><a href="{% url 'wishlist' %}" class="text-light text-decoration-none">Wishlist</a></li>
+            <li><a href="{% url 'informe_compras' %}" class="text-light text-decoration-none">Pedidos</a></li>
+            <li><a href="{% url 'perfil' %}" class="text-light text-decoration-none">Mi perfil</a></li>
+          </ul>
+        </div>
+        <div class="col-md-4 mb-3">
+          <h6 class="text-uppercase">Síguenos</h6>
+          <a href="https://www.facebook.com" class="text-light me-3" target="_blank" rel="noopener noreferrer"><i class="bi bi-facebook"></i></a>
+          <a href="https://www.instagram.com" class="text-light me-3" target="_blank" rel="noopener noreferrer"><i class="bi bi-instagram"></i></a>
+          <a href="https://twitter.com" class="text-light" target="_blank" rel="noopener noreferrer"><i class="bi bi-twitter"></i></a>
+        </div>
+      </div>
+      <div class="text-center mt-3">
+        <small>&copy; ARVShop. Todos los derechos reservados.</small>
+      </div>
     </div>
+  </footer>
+
+</div>
 
 </body>
 </html>

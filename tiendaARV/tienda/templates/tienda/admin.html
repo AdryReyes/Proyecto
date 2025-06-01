@@ -1,18 +1,104 @@
 {% extends 'tienda/base.html' %}
 
 {% block content %}
-    <a href="{% url 'producto_new' %}">Nuevo Producto</a>
+<div class="container my-4">
+    <h2 class="mb-4">Gestión de Productos</h2>
 
-        {% for producto in productos  %}
-            <p>Nombre: {{ producto.producto_nombre }}</p>
-        {% if user.is_staff %}
-            <div>
-                <a href="{% url 'producto_edit' pk=producto.pk %}">Editar</a>
-                <a href="{% url 'producto_delete' pk=producto.pk %}">Eliminar</a>
+    <!-- Botones de creación -->
+    <div class="mb-4">
+        <a href="{% url 'producto_new' %}" class="btn btn-success me-2">
+            <i class="bi bi-plus-circle"></i> Nuevo Producto
+        </a>
+        <a href="{% url 'marca_new' %}" class="btn btn-primary me-2">
+            <i class="bi bi-tag-fill"></i> Nueva Marca
+        </a>
+        <a href="{% url 'categoria_new' %}" class="btn btn-warning text-white">
+            <i class="bi bi-folder-plus"></i> Nueva Categoría
+        </a>
+    </div>
 
+    <!-- Buscador -->
+    <form method="get" class="mb-4" style="max-width: 450px;">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Buscar producto por nombre" value="{{ request.GET.q }}">
+            <button type="submit" class="btn btn-danger">Buscar</button>
+        </div>
+    </form>
+
+    <!-- Información de paginación -->
+    {% if is_paginated %}
+        <p class="text-center text-muted">
+            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}<br>
+            Total productos: {{ page_obj.paginator.count }}
+        </p>
+    {% endif %}
+
+    <!-- Listado de productos -->
+    {% for producto in productos %}
+        <div class="card mb-3">
+            <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h5 class="card-title text-dark mb-1">Nombre: {{ producto.producto_nombre }}</h5>
+                    <p class="mb-0 text-dark"><strong>Marca:</strong> {{ producto.marca }}</p>
+                    <p class="mb-0 text-dark"><strong>Categoría:</strong> {{ producto.categoria }}</p>
+                    <p class="mb-0 text-dark"><strong>Precio:</strong> {{ producto.precio_final }} €</p>
+                    <p class="mb-0 text-dark"><strong>Stock:</strong> {{ producto.producto_unidades }}</p>
+                </div>
+                {% if user.is_staff %}
+                    <div class="mt-3 mt-md-0">
+                        <a href="{% url 'producto_edit' pk=producto.pk %}" class="btn btn-sm btn-outline-primary me-2">
+                            <i class="bi bi-pencil-square"></i> Editar
+                        </a>
+                        <a href="{% url 'producto_delete' pk=producto.pk %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                {% endif %}
             </div>
-            <hr>
-        {% endif %}
-        {% endfor %}
+        </div>
+    {% empty %}
+        <p class="text-muted">No se encontraron productos.</p>
+    {% endfor %}
 
+    <!-- Paginación -->
+    {% if is_paginated %}
+        <nav aria-label="Paginación">
+            <ul class="pagination justify-content-center mt-4">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Anterior">
+                            &laquo;
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Siguiente">
+                            &raquo;
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
 {% endblock %}

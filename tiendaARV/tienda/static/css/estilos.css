@@ -165,3 +165,13 @@ a.btn-outline-light.custom-btn:hover {
 .card.compra-card a {
     color: black;
 }
+
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page-wrapper > .flex-grow-1 {
+  flex-grow: 1;
+}

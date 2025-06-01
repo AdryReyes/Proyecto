@@ -3,13 +3,13 @@
 {% block content %}
 <div class="container my-5">
     <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 600px;">
-        <h2 class="text-center mb-4">Editar Perfil</h2>
+        <h2 class="text-center mb-4 text-dark">Editar Perfil</h2>
 
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
             <div class="mb-3">
-                <label for="id_nombre" class="form-label">Nombre</label>
+                <label for="id_nombre" class="form-label text-dark">Nombre</label>
                 {{ form.nombre }}
                 {% if form.nombre.errors %}
                     <div class="text-danger small">{{ form.nombre.errors }}</div>
@@ -17,7 +17,7 @@
             </div>
 
             <div class="mb-3">
-                <label for="id_apellidos" class="form-label">Apellidos</label>
+                <label for="id_apellidos" class="form-label text-dark">Apellidos</label>
                 {{ form.apellidos }}
                 {% if form.apellidos.errors %}
                     <div class="text-danger small">{{ form.apellidos.errors }}</div>
@@ -25,7 +25,7 @@
             </div>
 
             <div class="mb-3">
-                <label for="id_email" class="form-label">Email</label>
+                <label for="id_email" class="form-label text-dark">Email</label>
                 {{ form.email }}
                 {% if form.email.errors %}
                     <div class="text-danger small">{{ form.email.errors }}</div>
@@ -33,7 +33,7 @@
             </div>
 
             <div class="mb-4">
-                <label for="id_nuevo_usuario" class="form-label">Nuevo Nombre de Usuario</label>
+                <label for="id_nuevo_usuario" class="form-label text-dark">Nuevo Nombre de Usuario</label>
                 {{ form.nuevo_usuario }}
                 {% if form.nuevo_usuario.errors %}
                     <div class="text-danger small">{{ form.nuevo_usuario.errors }}</div>
