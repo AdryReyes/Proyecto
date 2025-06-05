@@ -12,7 +12,8 @@
   <li>Dirección de envío: {{ compra.direccion.calle }}, {{ compra.direccion.ciudad }}, {{ compra.direccion.pais }}</li>
 </ul>
 
-<!-- Botón para descargar PDF -->
-{% comment %} <a href="{% url 'exportar_historial_pdf' %}" class="btn btn-outline-dark mb-4">Descargar Compra en PDF</a> {% endcomment %}
+<a href="{% url 'exportar_compra_pdf' compra.id %}" class="btn btn-outline-primary mt-3">
+    Descargar PDF de la compra
+</a>
 
 {% endblock %}

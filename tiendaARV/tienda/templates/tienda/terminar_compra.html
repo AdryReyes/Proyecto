@@ -3,7 +3,21 @@
 {% block content %}
 <div class="container my-5">
     <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 600px;">
-        <h2 class="text-center mb-4">Finalizar Compra</h2>
+        <h2 class="text-center mb-4 text-black">Finalizar Compra</h2>
+
+        <div class="mb-4 text-center">
+            <p class="mb-1 text-black"><strong>Producto:</strong> {{ producto.producto_nombre }}</p>
+            <p class="mb-1 text-black"><strong>Marca:</strong> {{ producto.marca.marca_nombre }}</p>
+            <p class="mb-1 text-black">
+                <strong>Precio:</strong> 
+                <span class="{% if producto.descuento %}text-success{% endif %}">
+                    {{ producto.precio_con_descuento }} €
+                </span>
+                {% if producto.descuento %}
+                    <small class="text-muted text-decoration-line-through ms-2">{{ producto.precio }} €</small>
+                {% endif %}
+            </p>
+        </div>
 
         {% if cuentas and direcciones %}
 

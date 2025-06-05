@@ -58,6 +58,7 @@ urlpatterns = [
     path('admin/ranking-marcas/', MarcaRankingView.as_view(), name='ranking_marcas'),
     path('admin/ranking-productos/', ProductoRankingView.as_view(), name='ranking_productos'),
     path('admin/ranking-clientes/', ClienteRankingView.as_view(), name='ranking_clientes'),
+    path('compra/<int:compra_id>/pdf/', exportar_compra_pdf, name='exportar_compra_pdf'),
 
 
 ]

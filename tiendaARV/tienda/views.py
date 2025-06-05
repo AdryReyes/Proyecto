@@ -1267,6 +1267,29 @@ def exportar_historial_pdf(request):
         return HttpResponse('Hubo un error al generar el PDF.', status=500)
     return response
 
+@login_required
+def exportar_compra_pdf(request, compra_id):
+    compra = get_object_or_404(Compra, id=compra_id, usuario=request.user.cliente)
+
+    items = producto_compra.objects.filter(compra=compra).select_related('producto')
+
+    template_path = 'tienda/compra_pdf.html'
+    context = {
+        'compra': compra,
+        'items': items,
+        'cliente': request.user.cliente
+    }
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="compra_{compra.id}.pdf"'
+
+    template = get_template(template_path)
+    html = template.render(context)
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse('Error al generar el PDF', status=500)
+    return response
 
 
 @method_decorator(staff_member_required, name='dispatch')
