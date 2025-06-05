@@ -65,6 +65,9 @@
             {% endif %}
             {% if request.user.is_staff %}
               <li><a class="dropdown-item" href="{% url 'producto_admin' %}">Administrar productos</a></li>
+              <li><a class="dropdown-item" href="{% url 'ranking_marcas' %}">Ranking marcas</a></li>
+              <li><a class="dropdown-item" href="{% url 'ranking_productos' %}">Ranking productos</a></li>
+              <li><a class="dropdown-item" href="{% url 'ranking_clientes' %}">Ranking clientes</a></li>
             {% endif %}
             <li><hr class="dropdown-divider"></li>
             <li>

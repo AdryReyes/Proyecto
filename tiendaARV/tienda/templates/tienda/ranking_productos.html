@@ -1,0 +1,41 @@
+{% extends "tienda/base.html" %}
+{% block content %}
+<div style="padding: 2rem;">
+    <h2 style="color: #b22d2d; font-size: 2rem; margin-bottom: 1rem;">Ranking de Productos</h2>
+
+    <table style="width: 100%; border-collapse: collapse; box-shadow: 0 0 8px rgba(0,0,0,0.1); text-align: center;">
+        <thead style="background-color: #b22d2d; color: white;">
+            <tr>
+                <th style="padding: 1rem;">Producto</th>
+                <th style="padding: 1rem;">Marca</th>
+                <th style="padding: 1rem;">Categoría</th>
+                <th style="padding: 1rem;">
+                    <a href="?sort_by=unidades&order={% if sort_by == 'unidades' and order == 'desc' %}asc{% else %}desc{% endif %}" style="color: white; text-decoration: none;">
+                        Unidades Vendidas {% if sort_by == 'unidades' %}({{ order|upper }}){% endif %}
+                    </a>
+                </th>
+                <th style="padding: 1rem;">
+                    <a href="?sort_by=ventas&order={% if sort_by == 'ventas' and order == 'desc' %}asc{% else %}desc{% endif %}" style="color: white; text-decoration: none;">
+                        Total Ventas (€) {% if sort_by == 'ventas' %}({{ order|upper }}){% endif %}
+                    </a>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr style="background-color: {% cycle '#ffffff' '#f9f9f9' %};">
+                <td style="padding: 0.8rem; color: black;">{{ producto.producto__producto_nombre }}</td>
+                <td style="padding: 0.8rem; color: black;">{{ producto.producto__marca__marca_nombre }}</td>
+                <td style="padding: 0.8rem; color: black;">{{ producto.producto__categoria__nombre }}</td>
+                <td style="padding: 0.8rem; color: #008001;">{{ producto.total_unidades }}</td>
+                <td style="padding: 0.8rem; color: #008001;">{{ producto.total_ventas|floatformat:2 }} €</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="padding: 1rem;">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

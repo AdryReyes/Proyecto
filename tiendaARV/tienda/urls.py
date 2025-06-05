@@ -16,7 +16,7 @@ urlpatterns = [
     path('admin/productos/new/', producto_new.as_view(), name='producto_new'),
     path('compra/<int:pk>/', productoCompraDetailView.as_view(), name='compra'),
     path('checkout/<int:pk>/', checkout.as_view(), name='confimar_compra'),
-    path('informe/marcas/', informe_marca.as_view(), name='informe_marca'),
+    # path('informe/marcas/', informe_marca.as_view(), name='informe_marca'),
     path('informe/historialcompras/', informe_compra.as_view(), name='informe_compras'),
     path('login/', views.iniciar_sesion.as_view(), name='login'),
     path('logout/', cerrar_sesion.as_view(), name='logout'),
@@ -55,7 +55,9 @@ urlpatterns = [
     path('admin/marca/nueva/', marca_new.as_view(), name='marca_new'),
     path('admin/categoria/nueva/', categoria_new.as_view(), name='categoria_new'),
     # path('paypal/cancelado/', views.paypal_cancelado, name='paypal_cancelado'),
-
+    path('admin/ranking-marcas/', MarcaRankingView.as_view(), name='ranking_marcas'),
+    path('admin/ranking-productos/', ProductoRankingView.as_view(), name='ranking_productos'),
+    path('admin/ranking-clientes/', ClienteRankingView.as_view(), name='ranking_clientes'),
 
 
 ]

@@ -1,0 +1,37 @@
+{% extends "tienda/base.html" %}
+{% block content %}
+<div style="padding: 2rem;">
+    <h2 style="color: #b22d2d; font-size: 2rem; margin-bottom: 1rem;">Ranking de Marcas</h2>
+
+    <table style="width: 100%; border-collapse: collapse; box-shadow: 0 0 8px rgba(0,0,0,0.1); text-align: center;">
+        <thead style="background-color: #b22d2d; color: white;">
+            <tr>
+                <th style="padding: 1rem;">Marca</th>
+                <th style="padding: 1rem;">
+                    <a href="?sort_by=ventas&order={% if sort_by == 'ventas' and order == 'desc' %}asc{% else %}desc{% endif %}" style="color: white; text-decoration: none;">
+                        Ventas {% if sort_by == 'ventas' %}({{ order|upper }}){% endif %}
+                    </a>
+                </th>
+                <th style="padding: 1rem;">
+                    <a href="?sort_by=dinero&order={% if sort_by == 'dinero' and order == 'desc' %}asc{% else %}desc{% endif %}" style="color: white; text-decoration: none;">
+                        Total (€) {% if sort_by == 'dinero' %}({{ order|upper }}){% endif %}
+                    </a>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for marca in ranking %}
+            <tr style="background-color: {% cycle '#ffffff' '#f9f9f9' %};">
+                <td  style="padding: 0.8rem;" class= text-black>{{ marca.nombre }}</td>
+                <td style="padding: 0.8rem; color: #008001;">{{ marca.total_ventas }}</td>
+                <td style="padding: 0.8rem; color: #008001;">{{ marca.total_dinero }} €</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="padding: 1rem;">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

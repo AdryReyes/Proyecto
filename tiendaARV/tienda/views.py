@@ -16,7 +16,7 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.utils.dateparse import parse_date
 from django.core.paginator import Paginator
-
+from datetime import datetime
 import paypalrestsdk
 from paypalrestsdk import Payment
 from requests import request
@@ -348,21 +348,21 @@ class registrarse(CreateView):
         login(self.request, user)  
         return response
 
-@method_decorator(staff_member_required, name='dispatch')
-@method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class informe_marca(TemplateView):
-    template_name = 'tienda/marcas.html'
+# @method_decorator(staff_member_required, name='dispatch')
+# @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
+# class informe_marca(TemplateView):
+#     template_name = 'tienda/marcas.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
 
-        marcas = Marca.objects.all()
-        productos = Producto.objects.all()
+#         marcas = Marca.objects.all()
+#         productos = Producto.objects.all()
 
-        context['marcas'] = marcas
-        context['productos'] = productos
+#         context['marcas'] = marcas
+#         context['productos'] = productos
 
-        return context
+#         return context
 
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
@@ -1266,3 +1266,108 @@ def exportar_historial_pdf(request):
     if pisa_status.err:
         return HttpResponse('Hubo un error al generar el PDF.', status=500)
     return response
+
+
+
+@method_decorator(staff_member_required, name='dispatch')
+class MarcaRankingView(TemplateView):
+    template_name = 'tienda/ranking_marcas.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        sort_by = self.request.GET.get('sort_by', 'ventas')
+        order = self.request.GET.get('order', 'desc')
+
+        datos = (
+            producto_compra.objects
+            .values('producto__marca__marca_id', 'producto__marca__marca_nombre')
+            .annotate(
+                total_ventas=Sum('unidades'),
+                total_dinero=Sum(F('precio') * F('unidades'))
+            )
+        )
+
+        ranking = [
+            {
+                'id': d['producto__marca__marca_id'],
+                'nombre': d['producto__marca__marca_nombre'],
+                'total_ventas': d['total_ventas'] or 0,
+                'total_dinero': round(d['total_dinero'] or 0, 2)
+            }
+            for d in datos
+        ]
+
+        reverse = True if order == 'desc' else False
+        if sort_by == 'ventas':
+            ranking.sort(key=lambda x: x['total_ventas'], reverse=reverse)
+        elif sort_by == 'dinero':
+            ranking.sort(key=lambda x: x['total_dinero'], reverse=reverse)
+
+        context['ranking'] = ranking
+        context['sort_by'] = sort_by
+        context['order'] = order
+        return context
+
+class ProductoRankingView(TemplateView):
+    template_name = 'tienda/ranking_productos.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        sort_by = self.request.GET.get('sort_by', 'ventas')
+        order = self.request.GET.get('order', 'desc')
+
+        datos = (
+            producto_compra.objects
+            .values(
+                'producto__id',
+                'producto__producto_nombre',
+                'producto__marca__marca_nombre',
+                'producto__categoria__nombre',
+                'producto__producto_precio'
+            )
+            .annotate(
+                total_unidades=Sum('unidades'),
+                total_ventas=Sum(F('unidades') * F('precio'))
+            )
+        )
+
+        if sort_by == 'precio':
+            orden = 'producto__producto_precio'
+        else:
+            orden = 'total_ventas'
+
+        if order == 'desc':
+            orden = '-' + orden
+
+        datos = datos.order_by(orden)
+
+        context['productos'] = datos
+        context['sort_by'] = sort_by
+        context['order'] = order
+        return context
+    
+class ClienteRankingView(TemplateView):
+    template_name = 'tienda/ranking_clientes.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        sort_by = self.request.GET.get('sort_by', 'compras')
+        order = self.request.GET.get('order', 'desc')
+        reverse = (order == 'desc')
+
+        ranking = Cliente.objects.annotate(
+            total_gastado=Sum('compra__compra_importe'),
+            total_compras=Count('compra')
+        )
+
+        if sort_by == 'gasto':
+            ranking = sorted(ranking, key=lambda c: c.total_gastado or 0, reverse=reverse)
+        else:
+            ranking = sorted(ranking, key=lambda c: c.total_compras or 0, reverse=reverse)
+
+        context['ranking'] = ranking
+        context['sort_by'] = sort_by
+        context['order'] = order
+        return context
