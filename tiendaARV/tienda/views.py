@@ -344,7 +344,12 @@ class registrarse(CreateView):
             nombre=form.cleaned_data['nombre'],  
             apellidos=form.cleaned_data['apellidos']  
         )
-        cliente.save()  
+        cliente.save()
+
+        CuentaPago.objects.create(
+            cliente=cliente,
+            nombre_cuenta=user.username
+        )
         login(self.request, user)  
         return response
 
