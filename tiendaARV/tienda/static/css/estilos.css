@@ -1,29 +1,29 @@
-/* Logo texto ARVShop grande, negro y separado del borde */
+
 .navbar-brand {
   color: black !important;
   font-family: 'Roboto', sans-serif;
-  font-weight: 900;          /* Más negrita */
-  font-size: 2.5rem;         /* Tamaño grande */
-  margin-left: 2.5rem;       /* Separación del borde izquierdo */
-  margin-right: 3rem;        /* Espacio a la derecha del logo */
+  font-weight: 900;          
+  font-size: 2.5rem;         
+  margin-left: 2.5rem;       
+  margin-right: 3rem;        
   cursor: pointer;
   user-select: none;
 }
 
-/* Alineación general de navbar items */
+
 .navbar-nav, .dropdown, .search-wrapper, .ms-auto.d-flex.align-items-center {
   display: flex;
   align-items: center;
 }
 
-/* Formulario de búsqueda centrado verticalmente */
+
 form.d-flex.mx-auto.w-50 {
   height: 50px;
   margin-top: 0 !important;
   margin-bottom: 0 !important;
 }
 
-/* Input de búsqueda estilizado */
+
 .search-wrapper input {
   height: 40px;
   font-size: 1rem;
@@ -31,45 +31,42 @@ form.d-flex.mx-auto.w-50 {
   border-radius: 6px;
 }
 
-/* Botón lupa dentro del buscador */
+
 .search-wrapper button {
   font-size: 1.4rem;
-  color: #333;  /* Gris oscuro para contraste */
+  color: #333;  
   cursor: pointer;
 }
 
-/* Espacio aumentado después del botón Categorías */
+
 .dropdown.me-3 {
   margin-right: 3rem;
 }
 
-/* Contenedor de carrito y perfil a la derecha, con espacios amplios */
 .ms-auto.d-flex.align-items-center {
-  gap: 2rem;           /* Espacio entre carrito y perfil */
-  margin-right: 2.5rem; /* Separación del borde derecho */
+  gap: 2rem;           
+  margin-right: 2.5rem; 
 }
 
-/* Margen extra en botón dropdown perfil (opcional) */
 .dropdown > .btn {
   margin-right: 0.5rem;
 }
 
-/* Botones personalizados con fondo rojo dentro del marco blanco */
+
 .btn-outline-light.custom-btn {
-  background-color: #b22d2d; /* fondo rojo burdeos */
+  background-color: #b22d2d; 
   color: white !important;
   border: 1px solid white;
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* Hover más oscuro */
+
 .btn-outline-light.custom-btn:hover {
-  background-color: #8a2222; /* rojo más oscuro */
+  background-color: #8a2222; 
   color: white !important;
   border-color: white;
 }
 
-/* Para el botón carrito que usa btn-outline-light y custom-btn */
 a.btn-outline-light.custom-btn {
   background-color: #b22d2d;
   color: white !important;
@@ -89,7 +86,7 @@ a.btn-outline-light.custom-btn:hover {
   border-color: white;
 }
 
-/* Botones personalizados (sin cambios) */
+
 .custom-btn {
   background-color: rgba(255, 255, 255, 0.15);
   transition: background-color 0.3s;
@@ -99,7 +96,6 @@ a.btn-outline-light.custom-btn:hover {
   background-color: rgba(255, 255, 255, 0.35);
 }
 
-/* Búsqueda posicionamiento */
 .search-wrapper {
   position: relative;
   width: 100%;
@@ -137,7 +133,7 @@ a.btn-outline-light.custom-btn:hover {
 }
 
 .custom-card {
-    background-color: #b22d2d !important; /* rojo burdeos */
+    background-color: #b22d2d !important; 
     border-color: #8b2222 !important;
 }
 
@@ -174,4 +170,70 @@ a.btn-outline-light.custom-btn:hover {
 
 .page-wrapper > .flex-grow-1 {
   flex-grow: 1;
+}
+
+.col-lg-2 {
+  background-color: #b22d2d !important;
+  min-height: 100vh !important;
+  position: sticky !important;
+  top: 0 !important;
+  padding: 1rem !important;
+}
+
+.col-lg-2 > form {
+  background-color: #b22d2d !important;
+  color: black !important;
+  padding: 1rem !important;
+  border-radius: 0 1rem 1rem 0 !important;
+  height: 100% !important;
+}
+
+.col-lg-10 {
+  padding: 1rem 2rem !important;
+}
+
+.d-flex.flex-wrap.gap-3 > div {
+  min-width: 250px !important;
+  max-width: 250px !important;
+  cursor: pointer !important;
+}
+
+
+@media (max-width: 991.98px) {
+  .col-lg-2 {
+    position: relative !important;
+    min-height: auto !important;
+    padding: 1rem 0.5rem !important;
+    border-radius: 0 !important;
+  }
+  .col-lg-10 {
+    padding: 1rem !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .row.g-0.my-5 {
+    flex-direction: column !important;
+  }
+  .col-lg-2, .col-lg-10 {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+  .col-lg-2 {
+    min-height: auto !important;
+    border-radius: 0 0 1rem 1rem !important;
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+  .d-flex.flex-wrap.gap-3 > div {
+    min-width: 45% !important;
+    max-width: 45% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .d-flex.flex-wrap.gap-3 > div {
+    min-width: 90% !important;
+    max-width: 90% !important;
+  }
 }

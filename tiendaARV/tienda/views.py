@@ -40,14 +40,9 @@ from django.http import Http404, HttpResponse, HttpResponseForbidden, JsonRespon
 
 from django.db.models import Count
 
-# paypalrestsdk.configure({
-#     "mode": "sandbox", 
-#     "client_id": settings.PAYPAL_CLIENT_ID,
-#     "client_secret": settings.PAYPAL_CLIENT_SECRET,
-# })
 
 
-class welcome(ListView, FormView):
+class welcome(ListView, FormView):  #Vista principal de la tienda (index)
     template_name = 'tienda/index.html'
     form_class = FilterForm
     context_object_name = 'productos'
@@ -100,7 +95,7 @@ class welcome(ListView, FormView):
 
     
 
-class producto_lista(DetailView):
+class producto_lista(DetailView):   #Vista que muestra la información de un producto
     model = Producto
     template_name = 'tienda/producto_detalle.html'
     context_object_name = 'producto'
@@ -141,7 +136,7 @@ class producto_lista(DetailView):
         return context
     
 @method_decorator(staff_member_required, name='dispatch')
-class producto_admin(ListView):
+class producto_admin(ListView): # Vista que muestra un listado de productos para administración.
     model = Producto
     template_name = 'tienda/admin.html'
     context_object_name = 'productos'
@@ -163,21 +158,18 @@ class producto_admin(ListView):
 
 @method_decorator(staff_member_required, name='dispatch')
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class producto_edit(UpdateView):
-    model = Producto
+class producto_edit(UpdateView): # Vista para editar un producto existente.
+    model = Producto 
     form_class = ProductoForm
     template_name = 'tienda/producto_edit.html'
 
     def form_valid(self, form):
-        # Procesamos la imagen cargada
         producto = form.save(commit=False)
-        producto.author = self.request.user  # Si este campo está en tu modelo
+        producto.author = self.request.user
         producto.published_date = timezone.now()
 
-        # Guardamos el producto
         producto.save()
 
-        # Guardamos la relación del archivo
         form.save_m2m()
 
         return redirect('producto_admin')
@@ -186,7 +178,7 @@ class producto_edit(UpdateView):
 
 @method_decorator(staff_member_required, name='dispatch')
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class producto_delete(DeleteView):
+class producto_delete(DeleteView): # Vista para borrar un producto existente.
 		model = Producto
 		success_url = reverse_lazy('producto_admin')
 		template_name = 'tienda/producto_edit.html'
@@ -194,56 +186,44 @@ class producto_delete(DeleteView):
 
 @method_decorator(staff_member_required, name='dispatch')
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class producto_new(CreateView):
-    model = Producto
+class producto_new(CreateView): # Vista para añadir un producto
+    model = Producto 
     template_name = 'tienda/producto_new.html'
     form_class = ProductoForm
     success_url = reverse_lazy('producto_admin')
 
     def form_valid(self, form):
-        # Asegurarnos de que el archivo de imagen se procesa
         producto = form.save(commit=False)
-        producto.author = self.request.user  # Si este campo está en tu modelo
+        producto.author = self.request.user 
         producto.published_date = timezone.now()
 
-        # Guardamos el producto
         producto.save()
 
-        # Guardamos la relación del archivo
         form.save_m2m()
 
         return redirect('producto_admin')
     
-class marca_new(CreateView):
+class marca_new(CreateView): # Vista para añadir una marca.
     model = Marca
     form_class = MarcaForm
     template_name = 'tienda/marca_new.html'
     success_url = reverse_lazy('producto_admin')
 
-class categoria_new(CreateView):
+class categoria_new(CreateView): # Vista para añadir una categoria.
     model = Categoria
     form_class = CategoriaForm
     template_name = 'tienda/categoria_new.html'
     success_url = reverse_lazy('producto_admin')
 
 
-
-# @method_decorator(staff_member_required, name='dispatch')
-# @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-# class producto_info(DetailView):
-# 	model = Producto
-# 	template_name = 'tienda/producto_info.html'
-# 	context_object_name = 'producto'
-
-
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
 @method_decorator(transaction.atomic, name='dispatch')
-class productoCompraDetailView(DetailView):
+class productoCompraDetailView(DetailView): # Vista que muestra el detalle de un producto y permite añadirlo al carrito
     model = Producto
     template_name = 'tienda/compra.html'
     context_object_name = 'producto'
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):  # Manejo del formulario cuando se envía por POST (añadir producto al carrito)
         producto = self.get_object()
         form = AgregarProductoForm(request.POST)
         if form.is_valid():
@@ -268,7 +248,7 @@ class productoCompraDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         producto = self.get_object()
 
-        items_compra = producto_compra.objects.filter(producto=producto)  # Aquí usamos el modelo correcto
+        items_compra = producto_compra.objects.filter(producto=producto)
         compras = [item.compra for item in items_compra]
 
         comentarios = Comentario.objects.filter(producto_compra__in=items_compra, aprobado=True)
@@ -280,7 +260,7 @@ class productoCompraDetailView(DetailView):
 
         return context
 
-class iniciar_sesion(LoginView):
+class iniciar_sesion(LoginView): # Vista basada en LoginView que gestiona el inicio de sesión
 	template_name = 'tienda/login.html'
 	form_class = LoginForm
 	success_url = '/tienda'
@@ -307,23 +287,21 @@ class iniciar_sesion(LoginView):
 
 
 
-class cerrar_sesion(LogoutView):
+class cerrar_sesion(LogoutView): # Vista para cerrar sesión, basada en LogoutView
     next_page = 'welcome'
 
     def dispatch(self, request, *args, **kwargs):
-        # Guardar el carrito antes de cerrar sesión
+
         carrito_guardado = request.session.get('carrito', {}).copy()
 
-        # Cerrar sesión
         response = super().dispatch(request, *args, **kwargs)
 
-        # Restaurar el carrito en la nueva sesión
         request.session['carrito'] = carrito_guardado
 
         return response
 
 
-class registrarse(CreateView):
+class registrarse(CreateView): # Vista para el registro de nuevos usuarios, basada en CreateView
     template_name = 'tienda/login.html'  
     form_class = SignInForm
     success_url = reverse_lazy('welcome')  
@@ -346,32 +324,16 @@ class registrarse(CreateView):
         )
         cliente.save()
 
-        CuentaPago.objects.create(
+        CuentaPago.objects.create(  # Crear una cuenta de pago para el nuevo cliente
             cliente=cliente,
             nombre_cuenta=user.username
         )
         login(self.request, user)  
         return response
 
-# @method_decorator(staff_member_required, name='dispatch')
-# @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-# class informe_marca(TemplateView):
-#     template_name = 'tienda/marcas.html'
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-
-#         marcas = Marca.objects.all()
-#         productos = Producto.objects.all()
-
-#         context['marcas'] = marcas
-#         context['productos'] = productos
-
-#         return context
-
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class informe_compra(TemplateView):
+class informe_compra(TemplateView): # Vista que muestra el historial de compras con filtros, paginación y eliminación
     template_name = 'tienda/detalle_compra.html'
 
     def dispatch(self, request, *args, **kwargs):
@@ -425,7 +387,7 @@ class informe_compra(TemplateView):
 
             compras_con_comentarios.append((compra, comentarios_por_compra))
 
-        # Contexto final
+        
         context['compras_con_comentarios'] = compras_con_comentarios
         context['page_obj'] = page_obj
         context['fecha_inicio'] = fecha_inicio
@@ -434,7 +396,7 @@ class informe_compra(TemplateView):
         return context
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class perfil(TemplateView):
+class perfil(TemplateView): # Vista que muestra el perfil del cliente
     template_name = 'tienda/perfil.html'
 
     def get_context_data(self, **kwargs):
@@ -443,15 +405,14 @@ class perfil(TemplateView):
         cliente = Cliente.objects.get(usuario=user)
         direcciones_envio = Direccion.objects.filter(cliente=cliente)
         direcciones_facturacion = Direccion.objects.filter(cliente=cliente)
-        # tarjetas_pago = TarjetaPago.objects.filter(cliente=cliente)
+
         context['cliente'] = cliente
         context['direcciones_envio'] = direcciones_envio
         context['direcciones_facturacion'] = direcciones_facturacion
-        # context['tarjetas_pago'] = tarjetas_pago
         return context
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class perfil_update(UpdateView):
+class perfil_update(UpdateView): #Vista que actualiza el perfil del cliente
     model = Cliente
     form_class = EditarDatosForm
     template_name = 'tienda/modificar_perfil.html'
@@ -482,7 +443,7 @@ class perfil_update(UpdateView):
 
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class direccion_new(CreateView):
+class direccion_new(CreateView): #Vista para añadir una dirección al cliente
     model = Direccion
     form_class = DireccionForm
     template_name = 'tienda/editar_direccion.html'
@@ -496,7 +457,7 @@ class direccion_new(CreateView):
 
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class direccion_edit(UpdateView):
+class direccion_edit(UpdateView): #Vista para editar la dirección del cliente
     model = Direccion
     form_class = DireccionForm
     template_name = 'tienda/editar_direccion.html'
@@ -517,13 +478,13 @@ class direccion_edit(UpdateView):
         try:
             self.object = self.get_object()
         except Http404:
-            return redirect('añadirDireccion')  # O muestra un mensaje
+            return redirect('añadirDireccion')
         return super().dispatch(request, *args, **kwargs)
 
 
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class direccion_delete(DetailView):
+class direccion_delete(DetailView):  #Vista para borrar la dirección del cliente
     model = Direccion
     template_name = 'tienda/borrar_direccion.html'
 
@@ -536,7 +497,7 @@ class direccion_delete(DetailView):
 
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class carrito(TemplateView):
+class carrito(TemplateView): # Vista que muestra el contenido del carrito de compras
     template_name = 'tienda/ver_carrito.html'
 
     def get_context_data(self, **kwargs):
@@ -587,13 +548,13 @@ class carrito(TemplateView):
 
 
 @login_required(login_url='/tienda/login/')
-def carrito_update(request):
+def carrito_update(request): #Vista para actualizar el carrito
     carrito = request.session.get('carrito', {})
     if not carrito:
         messages.error(request, "Tu carrito está vacío.")
         return redirect('verCarrito')
 
-    # Si se pulsó el botón de eliminar, se procesa directamente
+    # Si se pulsó el botón de eliminar
     if 'eliminar' in request.POST:
         producto_id = request.POST['eliminar']
         if producto_id in carrito:
@@ -641,7 +602,7 @@ def carrito_update(request):
 
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class carrito_delete(DeleteView):
+class carrito_delete(DeleteView): #Vista para borrar el producto del carrito
     def post(self, request, *args, **kwargs):
         producto_id = request.POST.get('producto_id')
 
@@ -662,7 +623,7 @@ class carrito_delete(DeleteView):
 
 @login_required(login_url='/tienda/login/')
 
-def finalizar_compra(request, producto_id):
+def finalizar_compra(request, producto_id): #Vista para finalizar la compra de un producto específico
     producto = get_object_or_404(Producto, id=producto_id)
     cliente = request.user.cliente
     cuentas = cliente.cuentas.all()
@@ -726,25 +687,8 @@ def finalizar_compra(request, producto_id):
         'invoice': invoice  # Se usa en el formulario PayPal
     })
 
-# @login_required(login_url='/tienda/login/')
-# def gestionar_cuentas(request):
-#     cliente = request.user.cliente
-#     if request.method == 'POST':
-#         form = CrearCuentaForm(request.POST)
-#         if form.is_valid():
-#             cuenta = form.save(commit=False)
-#             cuenta.cliente = cliente
-#             cuenta.save()
-#             return redirect('gestionar_cuentas')
-#     else:
-#         form = CrearCuentaForm()
-#     cuentas = cliente.cuentas.all()
-#     return render(request, 'tienda/gestionar_cuentas.html', {
-#         'form': form,
-#         'cuentas': cuentas,
-#     })
 
-def finalizar_compra_carrito(request):
+def finalizar_compra_carrito(request): #Vista para finalizar la compra del carrito
     cliente = request.user.cliente
     cuentas = cliente.cuentas.all()
     direcciones = cliente.direccion_set.all()
@@ -833,7 +777,7 @@ def compra_exitosa(request):
     return render(request, 'tienda/compra_exitosa.html', {'mensaje': '¡Compra realizada con éxito!'})
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class checkout(DetailView):
+class checkout(DetailView): #Vista para mostrar el resumen de la compra
     model = Compra
     template_name = 'tienda/resumen_compra.html'
     context_object_name = 'ultima_compra'
@@ -845,7 +789,7 @@ class checkout(DetailView):
 
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class comentario_new(FormView):
+class comentario_new(FormView): #Vista para crear un comentario
     form_class = ComentarioForm
 
     def form_valid(self, form):
@@ -876,7 +820,7 @@ class comentario_new(FormView):
             comentario=form.cleaned_data['comentario'],
             valoracion=form.cleaned_data['valoracion'],
             fecha=timezone.now(),
-            aprobado=True  # Ahora aprobado directamente
+            aprobado=True
         )
 
         return redirect('producto_lista', pk=producto.pk)
@@ -884,7 +828,7 @@ class comentario_new(FormView):
 
 
 @method_decorator(login_required(login_url='/tienda/login/'), name='dispatch')
-class comentario_edit(UpdateView):
+class comentario_edit(UpdateView): #Vista para editar un comentario
     model = Comentario
     fields = ['comentario', 'valoracion']
     template_name = 'tienda/editar_comentario.html'
@@ -897,13 +841,12 @@ class comentario_edit(UpdateView):
         return self.request.user == comentario.user or self.request.user.is_staff
 
     def form_valid(self, form):
-        # Opcional: lógica personalizada
         if self.request.user.is_staff:
-            form.instance.moderado_por.add(self.request.user)  # Si es staff, agrega como moderador
+            form.instance.moderado_por.add(self.request.user)
         return super().form_valid(form)
 
 
-class comentario_delete(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class comentario_delete(LoginRequiredMixin, UserPassesTestMixin, DeleteView): #Vista para eliminar un comentario
     model = Comentario
     template_name = 'tienda/eliminar_comentario.html'
 
@@ -917,7 +860,6 @@ class comentario_delete(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         comentario = self.get_object()
         if comentario.respuesta_a is None:
-            # borrar todas las respuestas directas e indirectas (recursivamente si las hubiera)
             def borrar_respuestas(c):
                 for r in c.respuestas.all():
                     borrar_respuestas(r)
@@ -925,7 +867,7 @@ class comentario_delete(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
             borrar_respuestas(comentario)
         return super().delete(request, *args, **kwargs)
 
-class ResponderComentarioView(View):
+class ResponderComentarioView(View): #Vista para responder un comentario
     def get(self, request, pk):
         comentario = get_object_or_404(Comentario, pk=pk)
         form = ResponderComentarioForm()
@@ -990,7 +932,7 @@ class comentario_mod(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
     
 
-class WishlistView(LoginRequiredMixin, ListView):
+class WishlistView(LoginRequiredMixin, ListView): #Vista para ver la lista de deseos
     model = Wishlist
     template_name = 'tienda/wishlist.html'
     context_object_name = 'wishlist_items'
@@ -998,7 +940,7 @@ class WishlistView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         cliente = self.request.user.cliente
-        return Wishlist.objects.filter(cliente=cliente).order_by('-agregado_fecha')  # Más recientes primero
+        return Wishlist.objects.filter(cliente=cliente).order_by('-agregado_fecha')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1006,7 +948,7 @@ class WishlistView(LoginRequiredMixin, ListView):
         return context 
 
 
-class ToggleWishlistView(LoginRequiredMixin, View):
+class ToggleWishlistView(LoginRequiredMixin, View): #Vista para añadir o eliminar un producto de la lista de deseos
     def post(self, request, producto_id):
         producto = get_object_or_404(Producto, id=producto_id)
 
@@ -1031,10 +973,9 @@ class ToggleWishlistView(LoginRequiredMixin, View):
 class ProductosPorCategoriaView(ListView):
     template_name = 'tienda/categoria.html'
     context_object_name = 'productos'
-    paginate_by = 15  # 🔹 Mostrar 15 productos por página
+    paginate_by = 15  
 
     def get_queryset(self):
-        # Obtener categoría según el slug pasado en la URL
         self.categoria = get_object_or_404(Categoria, nombre=self.kwargs['categoria_nombre'])
         return Producto.objects.filter(categoria=self.categoria)
 
@@ -1045,7 +986,7 @@ class ProductosPorCategoriaView(ListView):
         context['marcas'] = Producto.objects.filter(categoria=self.categoria).values('marca__marca_nombre').distinct()
         context['precio_min'] = self.request.GET.get('precio_min', '')
         context['precio_max'] = self.request.GET.get('precio_max', '')
-        context['query_params'] = self.request.GET.copy()  # 🔹 Para conservar filtros en los enlaces de paginación
+        context['query_params'] = self.request.GET.copy()  # Para conservar filtros en los enlaces de paginación
         return context
 
 
@@ -1166,7 +1107,7 @@ class ProductoFiltroView(View):
             productos = list(productos)
 
         # 🔹 Paginación
-        paginator = Paginator(productos, 15)  # 15 productos por página
+        paginator = Paginator(productos, 15)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
@@ -1247,7 +1188,7 @@ def exportar_historial_pdf(request):
         if fecha_fin_parsed:
             compras = compras.filter(compra_fecha__date__lte=fecha_fin_parsed)
 
-    paginator = Paginator(compras, 10)  # 10 compras por página
+    paginator = Paginator(compras, 10)
     page_obj = paginator.get_page(page_number)
 
     compras_con_items = []
